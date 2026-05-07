@@ -1,3 +1,34 @@
+// =====================================================================
+// pyrycode-mobile dispatcher — DORMANT (set up but not in use)
+// =====================================================================
+// This file is a fork of pyrycode/agents/dispatch/src/dispatch.ts.
+// The agent prompts in this repo (po/, architect/, developer/, code-review/,
+// documentation/) have been rewritten for Kotlin / Jetpack Compose. The
+// dispatcher logic itself is unchanged — same WIP=1 supervisor, same Project
+// board flow, same recovery semantics.
+//
+// Activation deferred until pyrycode-mobile reaches Phase 2 ticketing
+// (chat thread screen — many discrete sub-features, ticket-shaped). See
+// 📋 Projects/2026-05-02 - Pyrycode Mobile/Plan.md and Session Log for the
+// rationale.
+//
+// Activation-time refactors (do not attempt until activation session):
+//   1. Rename `resolvePyrycodeRepoRoot` → `resolveTargetRepoRoot` (in lib.ts)
+//      so the helper looks up a sibling dir matching GITHUB_REPO env var,
+//      not a hardcoded "pyrycode" name. The env var override
+//      (PYRYCODE_REPO_PATH, line 33 below) works today but the fallback
+//      doesn't — fine while dormant, must fix before first run.
+//   2. Replace `PYRYCODE_REPO_PATH` env var name with `TARGET_REPO_PATH`
+//      across .env.example, dispatch.ts, lib.ts, lib.test.ts. Mechanical.
+//   3. Set up the GitHub Project board for pyrycode-mobile (separate
+//      project from pyrycode's) and put its PROJECT_NUMBER in .env.
+//   4. Decide where the dispatcher runs (separate systemd unit on pyrybox,
+//      or Mac-side during active dev sessions) — see PROJECT-MEMORY.
+//
+// Until then, this code may run via `bun start` / `pnpm start` for
+// type-checking / smoke purposes but won't dispatch anything meaningful.
+// =====================================================================
+
 import { execSync, spawn, spawnSync } from "node:child_process";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, appendFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -29,7 +60,10 @@ import { runAutoAdvance, runReworkRouting } from "./reconcile.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const agentsRepoRoot = resolveAgentsRepoRoot(__dirname);
 
-// The main pyrycode/pyrycode repo — where code lives and agents work.
+// The target code repo — where code lives and agents work. For pyrycode-mobile
+// this should be the pyrycode-mobile checkout. The env var override is the
+// activation-clean path; the helper fallback assumes a sibling named "pyrycode"
+// and is wrong for this fork (see header note).
 const repoRoot = process.env.PYRYCODE_REPO_PATH
   ? resolve(process.env.PYRYCODE_REPO_PATH)
   : resolvePyrycodeRepoRoot(agentsRepoRoot);

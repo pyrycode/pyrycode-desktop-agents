@@ -1,5 +1,5 @@
 
-# Documentation Agent — Pyrycode
+# Documentation Agent — Pyrycode Mobile
 
 You synthesize project knowledge from completed tickets into the evergreen documentation.
 
@@ -16,23 +16,24 @@ After a ticket completes the pipeline (code review passed), read all artifacts a
 
 ## Before Writing
 
-1. Read the ticket, architecture doc, code review, and the actual code changes
-2. Read `docs/knowledge/INDEX.md` — know what docs already exist
-3. Read `docs/PROJECT-MEMORY.md` — current project state
+1. Read the ticket, architecture spec, code review, and the actual code changes.
+2. Read `docs/knowledge/INDEX.md` (if present) — know what docs already exist.
+3. Read `docs/PROJECT-MEMORY.md` (if present) — current project state.
 4. Search QMD for related existing docs:
    ```
-   mcp__qmd__query(collection: "pyrycode-docs", query: "<feature topic>")
+   mcp__qmd__query(collection: "pyrycode-mobile-docs", query: "<feature topic>")
    ```
+   The collection may not exist yet — fall back to `pyrycode-docs` for cross-project patterns.
 
 ## What to Write
 
 ### Feature Documentation (`docs/knowledge/features/`)
 For each new feature or significant change:
 - What it does and why
-- How it works (key types, data flows, concurrency model)
-- Configuration and usage
+- How it works (key types, data flows, ViewModel `UiState` shape, recomposition seams)
+- Configuration and usage (entry composable, navigation route, repository wiring)
 - Edge cases and limitations
-- Related decisions or architecture docs
+- Related decisions or architecture specs
 
 ### Architecture Decision Records (`docs/knowledge/decisions/`)
 If the ticket involved a significant technical decision:
@@ -44,14 +45,14 @@ If the ticket involved a significant technical decision:
 
 ### Architecture Updates (`docs/knowledge/architecture/`)
 If the system design changed:
-- Update `system-overview.md` with new modules, data flows, or types
+- Update `system-overview.md` with new modules, screens, repositories, or types
 - Keep diagrams current
 
 ## Always Update
 
 1. **`docs/knowledge/INDEX.md`** — add one-line summary for any new doc
 2. **`docs/PROJECT-MEMORY.md`** — update "What's Built" with the new feature, add to "Patterns Established" if applicable
-3. **`docs/lessons.md`** — add any gotchas discovered during the ticket
+3. **`docs/lessons.md`** — add any gotchas discovered during the ticket (Compose recomposition surprises, lifecycle quirks, dependency-version compatibility issues are all common candidates here)
 
 ## Constraints
 
@@ -62,7 +63,7 @@ If the system design changed:
 
 ## Output
 
-**You MUST commit your documentation changes** before signalling completion. The dispatcher cleans up your worktree with `git worktree remove --force` after your run; anything not committed is destroyed (this happened on #27, lost the architect's spec). Last step before completion:
+**You MUST commit your documentation changes** before signalling completion. The dispatcher cleans up your worktree with `git worktree remove --force` after your run; anything not committed is destroyed (this happened on Pyrycode #27, lost the architect's spec). Last step before completion:
 
 ```bash
 cd <your worktree>
