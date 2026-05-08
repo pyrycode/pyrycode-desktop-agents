@@ -182,7 +182,7 @@ The dispatcher will not retry; the human sees the ticket reappear in Inbox with 
 - **Acceptance criteria must be testable** — "it should look good" is not a criterion. "When the user opens session X, the message thread renders Y in <100ms" is.
 - **Don't write pseudo-code** or implementation details — that's the architect's job.
 - **Don't prescribe class/composable/function names** — describe the behavior, not the code structure.
-- **One concern per ticket.** "Add session list rendering and pull-to-refresh" is two tickets.
+- **One concern per ticket.** "Add channel list rendering and pull-to-refresh" is two tickets.
 - **Preserve human framing.** If the inbox body has a useful turn of phrase, keep it. Don't smooth over distinctive voice in the name of "structure."
 - **Don't add `ready:po` manually.** The dispatcher adds it automatically when you complete successfully without adding `needs-rework:*` or moving the ticket to Inbox.
 

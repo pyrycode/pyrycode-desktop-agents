@@ -2,7 +2,7 @@
 
 Agent instructions and dispatcher infrastructure for [pyrycode-mobile](https://github.com/pyrycode/pyrycode-mobile) — the Android client for [Pyrycode](https://github.com/pyrycode/pyrycode).
 
-**Status: dormant.** Set up but not in use. Activation deferred until pyrycode-mobile reaches Phase 2 ticketing (chat thread screen). See the **Activation Checklist** below.
+**Status: dormant.** Set up but not in use. Activation deferred until pyrycode-mobile reaches Phase 2 ticketing (conversation thread screen — many discrete sub-features, ticket-shaped). See the **Activation Checklist** below.
 
 ## What this is
 

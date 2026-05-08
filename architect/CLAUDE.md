@@ -103,8 +103,8 @@ After the size check passes, before writing the spec, identify which files your 
 
 ```bash
 # Files your design will touch (from the sketch — you have these in your head)
-FILES=("app/src/main/java/de/pyryco/mobile/data/repository/SessionRepository.kt"
-       "app/src/test/java/de/pyryco/mobile/data/repository/SessionRepositoryTest.kt"
+FILES=("app/src/main/java/de/pyryco/mobile/data/repository/ConversationRepository.kt"
+       "app/src/test/java/de/pyryco/mobile/data/repository/ConversationRepositoryTest.kt"
        "app/src/main/java/de/pyryco/mobile/PyryApp.kt")
 
 # For each open PR, list files it touches; flag overlaps
@@ -144,9 +144,9 @@ Write the architecture spec to `docs/specs/architecture/{ticket}-{name}.md`.
 
 Each spec should include:
 - **Files to read first** — explicit reading list with paths, line ranges, and a one-line "what to extract" per entry. Pull this from your pre-spec exploration; you already read these files. Required for every spec, not optional. Example:
-  - `app/src/main/java/de/pyryco/mobile/data/repository/SessionRepository.kt:14-42` — `SessionRepository` interface contract
-  - `app/src/main/java/de/pyryco/mobile/data/repository/FakeSessionRepository.kt:1-60` — fake-impl pattern; new repo's tests should follow the same shape
-  - `app/src/main/java/de/pyryco/mobile/ui/sessions/SessionListScreen.kt` — how existing screens consume StateFlow; preserve the pattern
+  - `app/src/main/java/de/pyryco/mobile/data/repository/ConversationRepository.kt:14-42` — `ConversationRepository` interface contract
+  - `app/src/main/java/de/pyryco/mobile/data/repository/FakeConversationRepository.kt:1-60` — fake-impl pattern; new repo's tests should follow the same shape
+  - `app/src/main/java/de/pyryco/mobile/ui/conversations/list/ChannelListScreen.kt` — how existing screens consume StateFlow; preserve the pattern
   - `app/src/main/java/de/pyryco/mobile/ui/theme/Theme.kt:18-45` — Material 3 color/typography slots; spec must say which slot to use
   - `gradle/libs.versions.toml` — confirm dependency already exists before requesting a new one
   - `docs/lessons.md` (if present) — relevant pitfalls for this area
@@ -184,11 +184,11 @@ The developer agent runs with a turn budget (~50-70 turns). Tickets that cross p
 
 ## Kotlin / Compose Architecture Patterns
 
-- **Module-level design** — single `app/` module to start; modularize only when build incremental > 60s or screens > 10. Within `app/`, organize by feature (`ui/sessions/`, `ui/chat/`, `ui/settings/`) and shared concern (`data/`, `di/`).
-- **Interface contracts** — small interfaces, defined where consumed (`SessionRepository` lives next to the ViewModels that use it, not in a generic `interfaces/` bucket).
+- **Module-level design** — single `app/` module to start; modularize only when build incremental > 60s or screens > 10. Within `app/`, organize by feature (`ui/conversations/list/`, `ui/conversations/thread/`, `ui/settings/`) and shared concern (`data/`, `di/`).
+- **Interface contracts** — small interfaces, defined where consumed (`ConversationRepository` lives next to the ViewModels that use it, not in a generic `interfaces/` bucket).
 - **State** — ViewModels expose a single `StateFlow<UiState>` and a single `fun onEvent(event: Event)` (sealed). UI is stateless and receives `(state, onEvent)`. Any local UI state (e.g. `rememberSaveable` for input field) is hoisted to the lowest scope that survives recomposition correctly — not always the ViewModel.
 - **Concurrency** — `viewModelScope.launch` for ViewModel-scoped jobs; `repository.observeX(): Flow<X>` for cold streams the UI collects via `collectAsStateWithLifecycle`. No `GlobalScope`, no manual dispatcher switching unless the IO-vs-Main boundary is real.
-- **Dependency injection** — Koin modules under `app/src/main/java/de/pyryco/mobile/di/`. Constructor injection (`single { FakeSessionRepository() } bind SessionRepository::class`); avoid service locator usage in composables.
+- **Dependency injection** — Koin modules under `app/src/main/java/de/pyryco/mobile/di/`. Constructor injection (`single { FakeConversationRepository() } bind ConversationRepository::class`); avoid service locator usage in composables.
 - **Recomposition correctness** — pass stable types to composables (data classes are stable when their fields are; lambda captures must be stable or `remember`d). Use `key()` for list items. Use `derivedStateOf` for state derivations. Avoid `MutableState` inside `LaunchedEffect`.
 - **Lifecycle** — `LaunchedEffect(key)` for side effects on composition; `DisposableEffect` for cleanup; `rememberSaveable` for state that survives configuration changes.
 - **Compose Multiplatform walk-back trigger** — keep `data/` portable (no Android-only APIs in domain types). UI under `ui/` is Android Compose; that's expected to need rewriting if iOS lands. Don't bake `Context` / `Resources` / Android-specific APIs into the data layer.

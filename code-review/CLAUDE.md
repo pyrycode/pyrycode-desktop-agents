@@ -59,7 +59,7 @@ Review the PR diff. Identify issues. Make a PASS/FAIL decision.
   - Cancellation — every coroutine job has a path to cancel (scope cancellation, explicit `job.cancel()`, or `withTimeout`). Look for orphaned `launch { while(true) ... }`.
 - **Error handling** — at I/O boundaries, errors should be returned as `Result<T>` or a sealed `Outcome` type, not thrown. Inside the domain, `IllegalStateException` / `IllegalArgumentException` for invariants is fine.
 - **Naming** —
-  - PascalCase for composables (`SessionList`, not `sessionList`) and types
+  - PascalCase for composables (`ChannelList`, not `channelList`) and types
   - camelCase for functions, properties, locals
   - `UPPER_SNAKE_CASE` for top-level `const val`
   - `data class` field names are camelCase even when serialized — JSON mapping happens at the boundary, not in the type
@@ -70,14 +70,14 @@ Review the PR diff. Identify issues. Make a PASS/FAIL decision.
 
 - **MVI shape** — ViewModel exposes `StateFlow<UiState>` and `fun onEvent(event: Event)`. UI calls `onEvent(...)` for any user action. Watch for two-way bindings (composable mutates ViewModel state directly) or scattered ViewModel-to-UI callbacks.
 - **Repository pattern** — Composables / ViewModels never call network / DataStore directly. Always via the repository interface. The architect's spec defines the boundary; PR must honor it.
-- **Module boundaries** — single `app/` module while small; if the PR adds a new feature directory under `ui/`, it should not import from another sibling feature directory (`ui/sessions` shouldn't import from `ui/chat`). Cross-feature collaboration goes through `data/` or `di/`.
+- **Module boundaries** — single `app/` module while small; if the PR adds a new feature directory under `ui/`, it should not import from another sibling feature directory (`ui/conversations/list` shouldn't import from `ui/conversations/thread` directly — share via `ui/conversations/components/`). Cross-feature collaboration goes through `data/` or `di/`.
 - **Compose-Multiplatform readiness** — `data/` should not import `android.*`. Anything `Context`-shaped at the data layer is MUST FIX (the project's walk-back trigger requires `data/` to stay portable).
 
 ### General
 
 - **Tests exist** for new logic. ViewModels should have unit tests; new repository implementations should have unit tests; new screens should have at least one Compose UI test verifying the happy path.
 - **No unnecessary dependencies** added to `gradle/libs.versions.toml`. New library? Justify in PR description.
-- **Commit messages** are clear and imperative ("Add session list ViewModel" not "added the list").
+- **Commit messages** are clear and imperative ("Add channel list ViewModel" not "added the list").
 - **No commented-out code** or `Log.d`/`println` debug calls left behind.
 - **lint clean** — `./gradlew lint` should not report new errors (warnings reviewed case-by-case).
 
@@ -109,8 +109,8 @@ Comment on the PR with your review. Format:
 **Decision: PASS / FAIL**
 
 ### Findings
-- [MUST FIX] SessionListScreen.kt:42 — hardcoded `Color(0xFF6750A4)` should be `MaterialTheme.colorScheme.primary`
-- [SHOULD FIX] SessionViewModel.kt:18 — `Dispatchers.IO` called directly; inject via constructor for test substitutability
+- [MUST FIX] ChannelListScreen.kt:42 — hardcoded `Color(0xFF6750A4)` should be `MaterialTheme.colorScheme.primary`
+- [SHOULD FIX] ChannelListViewModel.kt:18 — `Dispatchers.IO` called directly; inject via constructor for test substitutability
 - [NIT] Theme.kt:7 — typo in comment
 
 ### Summary

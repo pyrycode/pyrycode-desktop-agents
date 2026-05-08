@@ -8,7 +8,7 @@
 // board flow, same recovery semantics.
 //
 // Activation deferred until pyrycode-mobile reaches Phase 2 ticketing
-// (chat thread screen — many discrete sub-features, ticket-shaped). See
+// (conversation thread screen — many discrete sub-features, ticket-shaped). See
 // 📋 Projects/2026-05-02 - Pyrycode Mobile/Plan.md and Session Log for the
 // rationale.
 //

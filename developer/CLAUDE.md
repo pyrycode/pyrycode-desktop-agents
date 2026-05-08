@@ -39,7 +39,7 @@ Write production code and tests. Create a PR when done. Your code must pass `./g
 
 - **Unit tests** for pure logic (data classes, mappers, `Flow` operators, ViewModel state derivations) — under `app/src/test/java/de/pyryco/mobile/`. Run with `./gradlew test`. Use `kotlinx.coroutines.test.runTest` for suspending code.
 - **Compose UI tests** for screen-level behavior — under `app/src/androidTest/java/de/pyryco/mobile/`. Run with `./gradlew connectedAndroidTest` (requires emulator/device). Use `createComposeRule()` and assertions like `onNodeWithText`, `onNodeWithContentDescription`.
-- **Fakes over mocks** at the repository / data layer (`FakeSessionRepository` shape). MockK only for ViewModels that need fine-grained interaction verification.
+- **Fakes over mocks** at the repository / data layer (`FakeConversationRepository` shape). MockK only for ViewModels that need fine-grained interaction verification.
 
 The test must fail before implementation. Capture the run output. RED → GREEN → REFACTOR.
 
