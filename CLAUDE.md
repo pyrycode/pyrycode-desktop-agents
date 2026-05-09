@@ -2,22 +2,22 @@
 
 This is the dispatcher and agent-prompts repo for **pyrycode-mobile**. The Kotlin / Jetpack Compose source for the mobile app lives in `pyrycode-mobile/` (a sibling repo for now — see dispatcher header note about activation-time placement); this repo houses the orchestration layer that turns GitHub Project tickets into agent runs against the mobile codebase.
 
-This repo is forked from `pyrycode/agents`. Dispatcher source is shared with the upstream; agent prompts are mobile-specific (Kotlin/Compose conventions, Material 3 token enforcement, `--repo pyrycode/pyrycode-mobile`, etc.). Bring upstream dispatcher fixes in via the two-PR sync pattern documented in [`📋 Projects/2026-04-10 - Pyrycode/Agent Fork Sync Procedure`](../../) (vault).
+This repo is forked from `pyrycode/agents`. As of 2026-05-09 the dispatcher source itself lives in [`pyrycode/agent-dispatcher`](https://github.com/pyrycode/agent-dispatcher) — a separate repo consumed via git submodule at `dispatcher/`. Only the mobile-specific agent prompts (Kotlin/Compose, Material 3 token enforcement, `--repo pyrycode/pyrycode-mobile`, etc.) and `bin/` launcher scripts live in this repo.
 
-**Activation status: dormant** — set up but not running. The dispatcher waits for pyrycode-mobile to reach Phase 2 ticketing. See the activation-time refactor list in `dispatch/src/dispatch.ts` header.
+**Activation status: dormant** — set up but not running. The dispatcher waits for pyrycode-mobile to reach Phase 2 ticketing. See the activation-time notes in `dispatcher/src/dispatch.ts` header.
 
-## Dispatcher source layout (post-2026-05-09 split)
+## Dispatcher source layout
 
-The pure-function helpers used to live in a single `lib.ts`. As of 2026-05-09 they're split across five files; `lib.ts` is now a thin barrel re-export.
+The dispatcher's pure-function helpers are split across five files; `lib.ts` is a thin barrel re-export.
 
 | File | Owns |
 |---|---|
-| `dispatch/src/pipeline-decisions.ts` | Auto-advance rules + decision, rework routing, done-cleanup, post-run labels, label predicates, rework-target extraction, rework-loop circuit breaker, advance-rule lookup |
-| `dispatch/src/agent-runtime.ts` | `shouldUseWorktree`, `maxTurnsFor`, salvage gating (`shouldAttemptSafeSalvage`, `findReadyPrNumber`, `extractRateLimitInfo`), `SPAWN_ENV_DENYLIST` + `scrubSpawnEnv` |
-| `dispatch/src/worktree.ts` | `shouldAutoCommit`, `decideCodegraphSymlink`, `decideBranchSetup`, `findWorktreesForBranch`, `resolveAgentsRepoRoot`, `resolveTargetRepoRoot` |
-| `dispatch/src/blockers.ts` | `hasOpenBlockers`, `shouldSkipBlockedFor`, `shouldProduceCommits`, `parseCommitsAhead`, `shouldFlagEmptyBranch` |
-| `dispatch/src/dispatch-selection.ts` | `AGENT_COLUMN_MAP`, `selectDispatches` |
-| `dispatch/src/lib.ts` | Barrel re-export only (kept one cycle for `dispatch.ts` + tests) |
+| `dispatcher/src/pipeline-decisions.ts` | Auto-advance rules + decision, rework routing, done-cleanup, post-run labels, label predicates, rework-target extraction, rework-loop circuit breaker, advance-rule lookup |
+| `dispatcher/src/agent-runtime.ts` | `shouldUseWorktree`, `maxTurnsFor`, salvage gating (`shouldAttemptSafeSalvage`, `findReadyPrNumber`, `extractRateLimitInfo`), `SPAWN_ENV_DENYLIST` + `scrubSpawnEnv` |
+| `dispatcher/src/worktree.ts` | `shouldAutoCommit`, `decideCodegraphSymlink`, `decideBranchSetup`, `findWorktreesForBranch`, `resolveAgentsRepoRoot`, `resolveTargetRepoRoot` |
+| `dispatcher/src/blockers.ts` | `hasOpenBlockers`, `shouldSkipBlockedFor`, `shouldProduceCommits`, `parseCommitsAhead`, `shouldFlagEmptyBranch` |
+| `dispatcher/src/dispatch-selection.ts` | `AGENT_COLUMN_MAP`, `selectDispatches` |
+| `dispatcher/src/lib.ts` | Barrel re-export only (kept one cycle for `dispatch.ts` + tests) |
 
 Cross-file deps form a clean DAG: pipeline-decisions → blockers; dispatch-selection → pipeline-decisions + blockers; worktree and agent-runtime are leaves.
 
@@ -33,7 +33,7 @@ Cross-file deps form a clean DAG: pipeline-decisions → blockers; dispatch-sele
 
 The same fall-back rules apply as in agent CLAUDE.mds: use grep/Read for comments, string literals, docs, or pending edits the canonical index doesn't yet reflect.
 
-**Re-index when finished:** the dispatcher's worktree symlink (`decideCodegraphSymlink` in `worktree.ts`) points spawned agents at the canonical `.codegraph/`. After a substantive change to dispatcher source, run `codegraph index -f` from the repo root so the next dispatcher run sees the new symbols. (`codegraph sync` doesn't always pick up changes — confirmed 2026-05-09.)
+**Re-index when finished:** the dispatcher's worktree symlink (`decideCodegraphSymlink` in `worktree.ts`) points spawned agents at the canonical `.codegraph/`. After a substantive change to dispatcher source (i.e. inside the submodule), run `codegraph index -f` from the submodule root so the next dispatcher run sees the new symbols. (`codegraph sync` doesn't always pick up changes — confirmed 2026-05-09.)
 
 **Querying from a different cwd (e.g. the vault):** the codegraph MCP tools accept a `projectPath` argument — pass `/Users/<you>/Workspace/Projects/pyrycode-mobile-agents` to query the dispatcher from any session, regardless of where Claude Code was launched. Without `projectPath` the MCP server falls back to CWD, which usually isn't the project root.
 

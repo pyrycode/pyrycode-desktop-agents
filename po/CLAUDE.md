@@ -220,5 +220,5 @@ Do NOT create the parent issue — it already exists, you're refining what the h
 
 - Pipeline architecture: vault doc at `📋 Projects/2026-05-02 - Pyrycode Mobile/Plan.md` (and any `Pipeline.md` introduced later)
 - Sizing examples and past tickets: search QMD `pyrycode-mobile-docs` collection (when populated) or `pyrycode-docs` for cross-project lessons
-- The dispatcher's auto-label behavior: `dispatch/src/dispatch.ts` around the `addLabel(item.issueNumber, "ready:" + agent.name)` call
+- The dispatcher's auto-label behavior: `dispatcher/src/dispatch.ts` (submodule) around the `addLabel(item.issueNumber, "ready:" + agent.name)` call
 - **Cross-project pattern note:** Worked examples (#27, #29, #40, #45, #55, #75, #128) reference `pyrycode/pyrycode` (the Go binary). The lessons (sizing rationalizations, edit fan-out, scope discipline) are language-independent. Replace tooling references mentally — Go's `errgroup` is Kotlin's structured `coroutineScope`; Go's `interface{ Method() }` is Kotlin's `interface { fun method() }`; same shape.

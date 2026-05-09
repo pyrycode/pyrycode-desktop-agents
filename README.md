@@ -6,7 +6,7 @@ Agent instructions and dispatcher infrastructure for [pyrycode-mobile](https://g
 
 ## What this is
 
-A fork of [pyrycode/agents](https://github.com/pyrycode/agents) with the per-role agent prompts rewritten for Kotlin / Jetpack Compose. The dispatcher infrastructure (`dispatch/`) is unchanged — same WIP=1 supervisor, same GitHub Projects board flow, same recovery semantics, same JSONL replay procedure.
+A fork of [pyrycode/agents](https://github.com/pyrycode/agents) with the per-role agent prompts rewritten for Kotlin / Jetpack Compose. As of 2026-05-09 the dispatcher source itself lives in [`pyrycode/agent-dispatcher`](https://github.com/pyrycode/agent-dispatcher), consumed via git submodule at `dispatcher/` — same WIP=1 supervisor, same GitHub Projects board flow, same recovery semantics, same JSONL replay procedure.
 
 ## Why a separate repo
 
@@ -25,19 +25,28 @@ pyrycode-mobile-agents/
 ├── developer/CLAUDE.md       # Developer agent — Kotlin/Compose implementation, test-first
 ├── code-review/CLAUDE.md     # Code Review agent — Compose / Material 3 / a11y review
 ├── documentation/CLAUDE.md   # Documentation agent — evergreen docs, ADRs, lessons
-└── dispatch/
-    ├── src/
-    │   ├── dispatch.ts       # Main supervisor loop
-    │   ├── lib.ts            # Pure helpers (testable)
-    │   ├── lib.test.ts
-    │   ├── reconcile.ts      # Auto-advance / rework routing
-    │   ├── reconcile.test.ts
-    │   ├── github.ts         # GitHub GraphQL client
-    │   └── types.ts          # Agent + ProjectItem types
-    ├── package.json          # Bun/pnpm-compatible
-    ├── pnpm-lock.yaml
-    ├── tsconfig.json
-    └── .env.example
+├── bin/                      # pyry-start, pyry-drain, pyry-test, ...
+├── .env.example              # Copy to .env (gitignored)
+└── dispatcher/               # submodule → pyrycode/agent-dispatcher
+```
+
+## Cloning
+
+```bash
+git clone --recursive https://github.com/pyrycode/pyrycode-mobile-agents
+```
+
+If you forgot `--recursive`:
+
+```bash
+cd pyrycode-mobile-agents && git submodule update --init
+```
+
+`bin/pyry-start` runs `pnpm install --silent` in the submodule on every restart, so submodule SHA bumps land cleanly. To pull a newer dispatcher version:
+
+```bash
+cd dispatcher && git pull origin main && cd ..
+git add dispatcher && git commit -m "chore: bump dispatcher to <sha>"
 ```
 
 ## Cross-project reference
@@ -55,13 +64,13 @@ These are kept verbatim as historical learning material. The lessons (sizing, sc
 
 When pyrycode-mobile reaches Phase 2 and the chat-screen sub-tickets can be drafted (see [project plan](https://github.com/pyrycode/pyrycode-mobile/blob/main/CLAUDE.md)), do the following before the first dispatcher run:
 
-1. **Refactor the target-repo helper.** `resolvePyrycodeRepoRoot` in `dispatch/src/lib.ts` is hardcoded to look for a sibling dir named `pyrycode`. Rename to `resolveTargetRepoRoot` and have it look up the sibling matching `process.env.GITHUB_REPO`. Update `lib.test.ts` accordingly.
-2. **Rename the env var override.** `PYRYCODE_REPO_PATH` → `TARGET_REPO_PATH` (or just `REPO_PATH`). Update `.env.example`, `dispatch.ts`, `lib.ts`, `lib.test.ts`. Mechanical.
+1. ~~Refactor the target-repo helper~~ — DONE upstream 2026-05-09 (`resolveTargetRepoRoot`).
+2. ~~Rename the env var override~~ — DONE upstream 2026-05-09 (`TARGET_REPO_PATH`).
 3. **Create the GitHub Project board** for pyrycode-mobile (separate from pyrycode's). Define the same column states (Inbox / Backlog / In Architecture / In Development / In Review / In Documentation / Done). Get the `PROJECT_NUMBER` and `Status field option IDs`; populate them in `.env`.
 4. **Bootstrap the labels.** `size:xs`, `size:s`, `ready:po`, `ready:architect`, `ready:developer`, `ready:code-review`, `ready:documentation`, `needs-rework:po`, `needs-rework:architect`, `needs-rework:developer`, `needs-rework:code-review`, `error:max_turns_salvaged`. Use `gh label create` (active account = `ilmoniemi`).
 5. **Decide where the dispatcher runs.** Options:
    - Separate systemd unit on pyrybox (parallel to the pyrycode dispatcher) — same server, different `WorkingDirectory` and `.env`
-   - Mac-side during active dev sessions only (start/stop manually with `bun start`)
+   - Mac-side during active dev sessions only (start/stop manually with `./bin/pyry-start`)
    - Consider whether running both pipelines simultaneously creates Anthropic-API contention (unlikely at ticket cadence; flag if observed)
 6. **Smoke-test with one dummy ticket.** Before throwing real Phase-2 work at it, drop a one-line "rename the app bar title" ticket into Backlog and watch it flow through PO → Architect → Developer → CR → Documentation. Confirm the agents read the rewritten prompts, not the Go-shaped originals.
 7. **Update the vault**: project status flips from "agentic pipeline dormant" to "agentic pipeline active, Phase 2 ticketing."
