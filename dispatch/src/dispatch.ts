@@ -39,7 +39,7 @@ import { GitHubProjectClient } from "./github.js";
 import { AGENTS, type AgentConfig, type ProjectItem } from "./types.js";
 import {
   resolveAgentsRepoRoot,
-  resolvePyrycodeRepoRoot,
+  resolveTargetRepoRoot,
   shouldSkipDispatch,
   isPipelineLabel,
   isPipelineLabelForAgent,
@@ -70,13 +70,18 @@ import { runAutoAdvance, runReworkRouting } from "./reconcile.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const agentsRepoRoot = resolveAgentsRepoRoot(__dirname);
 
-// The target code repo — where code lives and agents work. For pyrycode-mobile
-// this should be the pyrycode-mobile checkout. The env var override is the
-// activation-clean path; the helper fallback assumes a sibling named "pyrycode"
-// and is wrong for this fork (see header note).
+// The target repo — where code lives and agents work. For pyrycode-mobile
+// this is the pyrycode-mobile checkout. Because mobile-agents is currently
+// checked out STANDALONE (alongside pyrycode-mobile/, not nested inside it),
+// the env var override is the only correct path — the helper fallback would
+// resolve to /Users/juhanailmoniemi/WorkSpace/Projects (parent of agents
+// repo), which isn't a code repo. At activation time, either:
+//   (a) Move agents/ to live INSIDE pyrycode-mobile/agents/ and the
+//       resolveTargetRepoRoot fallback works, OR
+//   (b) Set TARGET_REPO_PATH in agents/.env to the pyrycode-mobile path.
 const repoRoot = process.env.PYRYCODE_REPO_PATH
   ? resolve(process.env.PYRYCODE_REPO_PATH)
-  : resolvePyrycodeRepoRoot(agentsRepoRoot);
+  : resolveTargetRepoRoot(agentsRepoRoot);
 
 config({ path: resolve(agentsRepoRoot, ".env") });
 
