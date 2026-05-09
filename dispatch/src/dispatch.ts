@@ -79,8 +79,8 @@ const agentsRepoRoot = resolveAgentsRepoRoot(__dirname);
 //   (a) Move agents/ to live INSIDE pyrycode-mobile/agents/ and the
 //       resolveTargetRepoRoot fallback works, OR
 //   (b) Set TARGET_REPO_PATH in agents/.env to the pyrycode-mobile path.
-const repoRoot = process.env.PYRYCODE_REPO_PATH
-  ? resolve(process.env.PYRYCODE_REPO_PATH)
+const repoRoot = process.env.TARGET_REPO_PATH
+  ? resolve(process.env.TARGET_REPO_PATH)
   : resolveTargetRepoRoot(agentsRepoRoot);
 
 config({ path: resolve(agentsRepoRoot, ".env") });
