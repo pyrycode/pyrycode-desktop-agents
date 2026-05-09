@@ -13,17 +13,19 @@
 // rationale.
 //
 // Activation-time refactors (do not attempt until activation session):
-//   1. Rename `resolvePyrycodeRepoRoot` → `resolveTargetRepoRoot` (in lib.ts)
-//      so the helper looks up a sibling dir matching GITHUB_REPO env var,
-//      not a hardcoded "pyrycode" name. The env var override
-//      (PYRYCODE_REPO_PATH, line 33 below) works today but the fallback
-//      doesn't — fine while dormant, must fix before first run.
-//   2. Replace `PYRYCODE_REPO_PATH` env var name with `TARGET_REPO_PATH`
-//      across .env.example, dispatch.ts, lib.ts, lib.test.ts. Mechanical.
+//   1. ~~Rename `resolvePyrycodeRepoRoot` → `resolveTargetRepoRoot`~~ —
+//      DONE upstream pyrycode/agents@22c5aa1, synced here as 4d1549d. The
+//      function is now generic (resolves to parent of agents/).
+//   2. ~~Replace `PYRYCODE_REPO_PATH` env var name with `TARGET_REPO_PATH`~~ —
+//      DONE upstream pyrycode/agents@275c8a0, synced here as a30e208.
+//      BREAKING — when activating, set `TARGET_REPO_PATH` (not the old name)
+//      in agents/.env, OR move agents/ inside pyrycode-mobile/ so the
+//      resolver fallback finds the right repo.
 //   3. Set up the GitHub Project board for pyrycode-mobile (separate
 //      project from pyrycode's) and put its PROJECT_NUMBER in .env.
-//   4. Decide where the dispatcher runs (separate systemd unit on pyrybox,
-//      or Mac-side during active dev sessions) — see PROJECT-MEMORY.
+//   4. Decide where the dispatcher runs (Mac-side during active dev
+//      sessions, matching pyrycode's pattern, or separate systemd unit
+//      on pyrybox) — see PROJECT-MEMORY.
 //
 // Until then, this code may run via `bun start` / `pnpm start` for
 // type-checking / smoke purposes but won't dispatch anything meaningful.
