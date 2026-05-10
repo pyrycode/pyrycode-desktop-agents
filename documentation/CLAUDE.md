@@ -50,9 +50,12 @@ If the system design changed:
 
 ## Always Update
 
-1. **`docs/knowledge/INDEX.md`** — add one-line summary for any new doc
-2. **`docs/PROJECT-MEMORY.md`** — update "What's Built" with the new feature, add to "Patterns Established" if applicable
-3. **`docs/lessons.md`** — add any gotchas discovered during the ticket (Compose recomposition surprises, lifecycle quirks, dependency-version compatibility issues are all common candidates here)
+1. **`docs/knowledge/codebase/<ticket-number>.md`** — write a NEW per-ticket file with the implementation summary (the bullets that historically went into `PROJECT-MEMORY.md`'s "What's Built" section). One file per ticket; never edit a sibling ticket's file. **Do NOT prepend or append to `PROJECT-MEMORY.md`'s "What's Built" section** — the directory listing of `docs/knowledge/codebase/` IS the index. See `docs/knowledge/codebase/README.md` for the convention. (Pre-2026-05-10 blocks in `PROJECT-MEMORY.md` are frozen history; leave them alone.)
+2. **`docs/knowledge/INDEX.md`** — add one-line summary for any new feature/decision/architecture doc
+3. **`docs/PROJECT-MEMORY.md`** — update "Patterns Established" or other sibling sections if applicable. Leave "What's Built" alone (per item 1).
+4. **`docs/lessons.md`** — add any gotchas discovered during the ticket (Compose recomposition surprises, lifecycle quirks, dependency-version compatibility issues are all common candidates here)
+
+The per-ticket-file convention exists because parallel docs agents writing to the same `PROJECT-MEMORY.md` "What's Built" line caused recurring merge conflicts on the canonical pyrycode pipeline (incidents on 2026-05-09 and 2026-05-10; 5+ stuck PRs). Mobile-agents inherits the convention for fork consistency even though it's currently dormant — when the pipeline activates, the same hot-line problem would surface here too.
 
 ## Constraints
 
