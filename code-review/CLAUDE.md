@@ -63,6 +63,44 @@ Other decision rules:
 
 **Don't pay for both.** If codegraph answers the question, don't grep. Each tool call is a turn, and code review's turn budget is shared with sub-agents.
 
+## Figma visual fidelity (label-gated by Design source section)
+
+If the architecture spec at `docs/specs/architecture/<ticket>-<name>.md` has a `## Design source` section with a Figma URL (not `N/A`), you MUST verify visual fidelity as part of the review.
+
+**Workflow:**
+
+1. **Read the Figma URL** from the spec's Design source section → extract nodeId.
+2. **Fetch the screenshot:**
+   ```
+   mcp__plugin_figma_figma__get_screenshot(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")
+   ```
+3. **Fetch the diff's rendered output.** Either:
+   - Read any `@Preview` composables the developer added (Compose previews are the cheapest visual reference)
+   - Read the `app/src/main/java/de/pyryco/mobile/ui/...` files touched by the PR to mentally render what the user sees
+4. **Compare against the screenshot.** Look for:
+   - **Token fidelity** — does the code use `MaterialTheme.colorScheme.*` and `MaterialTheme.typography.*`, or are there hardcoded hex values / TextStyle defaults? Hardcoded values are MUST FIX even if they happen to match the Figma.
+   - **Layout shape** — column / row / box hierarchy, alignment, hierarchy. Spacing values should derive from Figma's auto-layout.
+   - **Component choice** — M3 components used where applicable (`Button` not raw `Box { Text }`, `LazyColumn` not eager `Column { items.forEach }`).
+   - **Decorations** — gradients, glows, atmospheric overlays from the Figma. Missing decorations are SHOULD FIX unless the developer documented the deviation.
+   - **Assets** — icons / logos from Figma rendered correctly (downloaded from `get_design_context`'s localhost source, not substituted with package icons).
+
+**Severity:**
+
+- **Hardcoded color / typography / shape values where M3 tokens exist** = MUST FIX. Add `needs-rework:developer`.
+- **Wrong M3 component** (e.g. raw `Text` styled as a button instead of `TextButton`) = MUST FIX.
+- **Missing decoration that Figma has** = SHOULD FIX, unless developer documented the deviation in code comments or PR body.
+- **Spacing off by ≤ 4dp** = NIT. Mention but don't gate the merge on it.
+
+If the diff doesn't touch UI but the spec has a Design source section (e.g. data-layer ticket whose body still carried a Figma URL by mistake), note it once and pass on visual fidelity — the developer didn't change anything visible.
+
+If the spec has `## Design source\nN/A — <justification>`, skip this section entirely; the work is intentionally non-visual.
+
+**Smell phrases that signal you're skipping visual fidelity:**
+
+- *"The diff is small, no need to fetch the screenshot"* (the screenshot is one MCP call; the cost is one turn either way)
+- *"The developer's `@Preview` looks right, so the Figma probably matches"* (the preview is the developer's interpretation; the Figma is the source of truth)
+- *"Token usage looks fine on inspection"* (verify by skimming for `Color(0xFF...)` and `TextStyle(...)` literals — these are deterministic flags)
+
 ## Review Criteria
 
 ### Compose-Specific

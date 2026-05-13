@@ -35,6 +35,30 @@ When in doubt, **apply it**. Pure-function helpers, refactors with no behaviour 
 
 The label is the contract for the (future) spec-stage security-review agent — it reads this label at architect-stage to decide whether to audit the proposed design before implementation. Per [[instruction-design#Labels Are the Truth, Prose Is for Humans|Labels Are the Truth]]: prose in the ticket body is decorative; this label is what mechanically gates the security review.
 
+## Figma references for UI tickets
+
+**Every UI-visible ticket MUST include a Figma URL in the body.** The canonical Figma file for pyrycode-mobile is [`g2HIq2UyPhslEoHRokQmHG`](https://www.figma.com/design/g2HIq2UyPhslEoHRokQmHG). Format the reference as:
+
+```markdown
+## Figma
+https://www.figma.com/design/g2HIq2UyPhslEoHRokQmHG?node-id=<nodeId>
+```
+
+Where `<nodeId>` points to the specific screen / component / dialog / sheet the ticket touches. Examples: `15-8` (Channel List), `13-2` (Scanner), `6-32` (Welcome). The full inventory of nodeIds is in the project main note's Views section.
+
+**UI-visible** means the ticket changes anything the user sees: screen layout, component visuals, theming, dialogs, sheets, navigation transitions. Data-layer tickets, repository scaffolding, DI wiring, and infra changes are NOT UI-visible — omit the Figma section.
+
+If a UI ticket genuinely has no Figma counterpart (e.g. a placeholder route until design lands), state that explicitly:
+
+```markdown
+## Figma
+N/A — placeholder route; visual design lands in #<followup-ticket>.
+```
+
+The "N/A with justification" escape exists for genuine gaps, not as a default. If the Figma file is missing a view the ticket needs, the right move is to file a Figma-side ticket (or ask Juhana to add it) before refining the implementation ticket.
+
+**Why this matters.** Phase 1 shipped 28 tickets with no Figma references in the bodies; architect specs were written against `Plan.md` prose; developer agents produced generic M3 implementations that diverged from the locked Figma design. This rule closes that gap upstream: architect can't write a Figma-anchored spec without a Figma URL in the ticket; the chain breaks if PO doesn't establish the link.
+
 ## Before Refining
 
 1. Read `docs/PROJECT-MEMORY.md` (if present) — understand what's already built. (**Read-only** — documentation phase owns shared docs.)

@@ -68,6 +68,55 @@ Other decision rules:
 
 **Don't pay for both.** If codegraph answers the question, don't grep. Each tool call is a turn.
 
+## Figma (read it before writing UI code)
+
+If the architecture spec has a `## Design source` section with a Figma URL, you MUST follow this workflow before writing any UI code for the ticket. The spec carries design intent forward, but the actual fidelity work happens here — the architect's summary is scope-setting, not pixel-binding.
+
+If the spec's `## Design source` says `N/A — <justification>`, skip this section entirely; the work is placeholder / non-visual.
+
+**Workflow — six numbered steps, follow in order:**
+
+1. **Parse the Figma URL** from the spec's Design source section → fileKey (`g2HIq2UyPhslEoHRokQmHG` for this repo) + nodeId.
+
+2. **Fetch design context:**
+   ```
+   mcp__plugin_figma_figma__get_design_context(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")
+   ```
+   Returns layout properties, typography specs, color tokens, spacing values, component structure. Read all of it before writing any Compose.
+
+3. **Fetch the visual reference:**
+   ```
+   mcp__plugin_figma_figma__get_screenshot(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")
+   ```
+   The screenshot is your source of truth for visual validation. Keep it accessible throughout implementation; you'll compare your final render against it at step 6.
+
+4. **If `get_design_context` is truncated** (large screens, nested components): call `mcp__plugin_figma_figma__get_metadata` to get the high-level node map, identify the specific child nodes you need, then `get_design_context` per child.
+
+5. **Translate to Compose with M3 tokens.** The Figma MCP output is typically React + Tailwind — treat it as reference data, NOT as final code. Translate to:
+   - **Colors:** `MaterialTheme.colorScheme.*` (or seeded `Schemes/*` variable names exposed via `Theme.kt`). NO hardcoded hex values — if the Figma uses `Schemes/Primary`, use `MaterialTheme.colorScheme.primary`. M3 derives the tonal palette from seeded colors, so the literal seed (`#2E78B5`) won't appear verbatim in `Color.kt`; use the role tokens.
+   - **Typography:** `MaterialTheme.typography.*` (headlineLarge, titleMedium, bodyLarge, labelSmall, etc.). The M3 kit's `M3/<category>/<size>` style names map directly.
+   - **Spacing:** `Modifier.padding(...)`, `Modifier.size(...)` — derived from Figma's auto-layout padding / gap values, but expressed in `dp`.
+   - **Components:** prefer M3 (`Button`, `OutlinedButton`, `TextButton`, `IconButton`, `Card`, `Surface`, `TopAppBar`, `LazyColumn`, `ModalBottomSheet`, `AlertDialog`). Build custom only when M3 has no equivalent.
+   - **Assets:** if `get_design_context` returns localhost SVG/PNG sources for icons or logos, download them and place under `app/src/main/res/drawable/`. Do NOT pull in new icon packages; do NOT use placeholders if a localhost source is available.
+
+6. **Validate against the screenshot before opening the PR.** Run the app on emulator (or use `@Preview` composables for static screens) and visually compare against the Figma screenshot from step 3. Checklist:
+   - [ ] Layout matches (column/row shape, alignment, spacing, hierarchy)
+   - [ ] Typography matches (font, size, weight — via M3 style)
+   - [ ] Colors match (via M3 role tokens, not literal hex)
+   - [ ] Interactive states render (pressed, disabled — Compose handles these via M3 defaults)
+   - [ ] All assets render (no missing icons, no broken SVGs)
+   - [ ] Decorations present (gradients, glows, atmospheric overlays from the Figma)
+
+If your render diverges from the screenshot in a way you can't reconcile (e.g. Figma uses a Schemes variable that doesn't exist in `Theme.kt`, or layout needs a custom shape M3 doesn't provide), document the deviation in code comments AND in the PR description. Don't silently ship divergence — code-review will flag it as `needs-rework:developer` per the visual-fidelity rule in their CLAUDE.md.
+
+**Smell phrases that signal you're skipping Figma fidelity:**
+
+- *"The Figma is just for reference; functional shape is what matters"* (no — the spec's Design source section makes visual fidelity load-bearing for this ticket)
+- *"I'll get the M3 layout right and pixel-tune later"* (later doesn't come; later is the Phase 1.5 catchup PR we're trying to avoid for Phase 2)
+- *"`get_design_context` returned a lot of data; I'll skim and write from memory"* (no — read it; the spacing and token assignments are where divergence creeps in)
+
+The skill called `figma-implement-design` covers this same workflow; this section inlines it because the dispatcher doesn't whitelist the `Skill` tool.
+
 ## Security-sensitive tickets (label-gated)
 
 If the ticket carries the `security-sensitive` label, the spec at `docs/specs/architecture/<ticket>-<name>.md` will have a `## Security review` section appended by the architect. **Read it carefully before writing tests or implementation.** Findings classified as MUST FIX or SHOULD FIX shape design choices that the spec body alone may not make explicit:

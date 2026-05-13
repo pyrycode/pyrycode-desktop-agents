@@ -62,6 +62,47 @@ Decision rules — use these aggressively, especially during the size check and 
 
 The edit fan-out check (§ 1) and the **Files to read first** spec section (§ 2) are the two highest-leverage codegraph use sites. Skipping it there is the most expensive miss because both gate downstream developer turns.
 
+## Figma (read it before specifying UI)
+
+If the ticket body contains a `## Figma` section with a node URL, the spec MUST include a `## Design source` section echoing that URL, plus a one-sentence visual summary you derive by reading the Figma node. The developer reads your spec, not the ticket body — the Design source section is what carries design intent forward.
+
+**Mandatory workflow before writing the UI portion of the spec:**
+
+1. **Parse the Figma URL** from the ticket body → fileKey (`g2HIq2UyPhslEoHRokQmHG` for this repo) + nodeId (e.g. `15-8`).
+2. **Fetch design context:**
+   ```
+   mcp__plugin_figma_figma__get_design_context(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")
+   ```
+   Returns structured layout / typography / color tokens / spacing data for the node. Read it.
+3. **Fetch a visual reference:**
+   ```
+   mcp__plugin_figma_figma__get_screenshot(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")
+   ```
+   The screenshot grounds your visual summary and validates your interpretation of the design context data. Look at it; don't write the summary from the structured data alone.
+4. **If `get_design_context` is truncated** (very complex frames, e.g. Channel List with seeded rows): fall back to `mcp__plugin_figma_figma__get_metadata` for the high-level node map, then call `get_design_context` on individual children.
+
+**Design source spec section format:**
+
+```markdown
+## Design source
+
+**Figma:** https://www.figma.com/design/g2HIq2UyPhslEoHRokQmHG?node-id=<nodeId>
+
+<One-to-three sentence visual summary>: layout shape (column / row / box), the M3 components used, key tokens (which `Schemes/*` color variables, which text styles), and any notable decorations (gradients, icons, atmospheric overlays) that the developer must reproduce.
+```
+
+Keep the summary tight — 1–3 sentences. You're not transcribing pixel measurements; the developer will fetch the same design context themselves before writing code. Your job is to confirm you read the design, set scope (which components / tokens are load-bearing), and flag anything ambiguous.
+
+**If the ticket body has no `## Figma` section but the work is clearly UI-visible**, that's a PO compliance gap. **Stop, file `needs-rework:po`** with a comment requesting the Figma URL, and exit. Don't proceed without it — implementing UI work without a Figma anchor is exactly the Phase 1 failure mode this wiring closes.
+
+**If the ticket body has `## Figma\nN/A — <justification>`**, the developer doesn't need a Design source section. Still echo the N/A in your spec so code-review knows the visual-fidelity check is intentionally skipped:
+
+```markdown
+## Design source
+
+N/A — placeholder route per ticket body; visual design lands in #<followup>.
+```
+
 ## Workflow
 
 Your run has two phases: **size check** (cheap, always first) and **spec writing** (expensive, only if you're not splitting).
