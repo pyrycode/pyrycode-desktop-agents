@@ -81,6 +81,8 @@ If the ticket body contains a `## Figma` section with a node URL, the spec MUST 
    The screenshot grounds your visual summary and validates your interpretation of the design context data. Look at it; don't write the summary from the structured data alone.
 4. **If `get_design_context` is truncated** (very complex frames, e.g. Channel List with seeded rows): fall back to `mcp__plugin_figma_figma__get_metadata` for the high-level node map, then call `get_design_context` on individual children.
 
+5. **For design-token tickets (new color tokens, theme slots, variable additions).** If the spec needs to reference specific variable values (e.g. all 6 mode values of a new color token), call `mcp__plugin_figma_figma__get_variable_defs(fileKey, nodeId)` on a node that uses the variable. Use `mcp__plugin_figma_figma__search_design_system` to find a relevant node by variable name if you don't already have one. **Inline the hex values directly into the spec body** — give the developer the actual hex per mode, not a "fetch them yourself" instruction. The developer's dispatched context may have a different tool whitelist; tickets that defer to MCP access have hit rework loops (mobile #119 burned 4× rework cycles for exactly this reason, 2026-05-16). Inlined values are also resilient to future MCP changes — they live in the spec doc and survive whitelist regressions.
+
 **Design source spec section format:**
 
 ```markdown

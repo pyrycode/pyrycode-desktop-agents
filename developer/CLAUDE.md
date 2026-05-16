@@ -92,6 +92,12 @@ If the spec's `## Design source` says `N/A — <justification>`, skip this secti
 
 4. **If `get_design_context` is truncated** (large screens, nested components): call `mcp__plugin_figma_figma__get_metadata` to get the high-level node map, identify the specific child nodes you need, then `get_design_context` per child.
 
+4b. **For design-token tickets (variable mode values).** If the architect's spec references specific Figma variable values (e.g. `Schemes/Warning` Dark = `#D8B85A`), the values SHOULD be inlined in the spec body — implement directly from the inlined values. If they aren't and you genuinely need to read them, use:
+   ```
+   mcp__plugin_figma_figma__get_variable_defs(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<a node that uses the variable>")
+   ```
+   Returns resolved hex per mode for every bound variable visible from that node. Use `mcp__plugin_figma_figma__search_design_system` to find a relevant node by name first if you don't already have one. Prefer asking the architect to inline values rather than fetching yourself — tickets that defer to MCP access have hit rework loops when whitelists or specs drift (mobile #119, 2026-05-16).
+
 5. **Translate to Compose with M3 tokens.** The Figma MCP output is typically React + Tailwind — treat it as reference data, NOT as final code. Translate to:
    - **Colors:** `MaterialTheme.colorScheme.*` (or seeded `Schemes/*` variable names exposed via `Theme.kt`). NO hardcoded hex values — if the Figma uses `Schemes/Primary`, use `MaterialTheme.colorScheme.primary`. M3 derives the tonal palette from seeded colors, so the literal seed (`#2E78B5`) won't appear verbatim in `Color.kt`; use the role tokens.
    - **Typography:** `MaterialTheme.typography.*` (headlineLarge, titleMedium, bodyLarge, labelSmall, etc.). The M3 kit's `M3/<category>/<size>` style names map directly.
