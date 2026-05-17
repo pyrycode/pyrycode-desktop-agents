@@ -67,7 +67,7 @@ When pyrycode-mobile reaches Phase 2 and the chat-screen sub-tickets can be draf
 1. ~~Refactor the target-repo helper~~ — DONE upstream 2026-05-09 (`resolveTargetRepoRoot`).
 2. ~~Rename the env var override~~ — DONE upstream 2026-05-09 (`TARGET_REPO_PATH`).
 3. **Create the GitHub Project board** for pyrycode-mobile (separate from pyrycode's). Define the same column states (Inbox / Backlog / In Architecture / In Development / In Review / In Documentation / Done). Get the `PROJECT_NUMBER` and `Status field option IDs`; populate them in `.env`.
-4. **Bootstrap the labels.** `size:xs`, `size:s`, `ready:po`, `ready:architect`, `ready:developer`, `ready:code-review`, `ready:documentation`, `needs-rework:po`, `needs-rework:architect`, `needs-rework:developer`, `needs-rework:code-review`, `error:max_turns_salvaged`. Use `gh label create` (active account = `ilmoniemi`).
+4. **Bootstrap the labels.** `size:xs`, `size:s`, `done:po`, `done:architect`, `done:developer`, `done:code-review`, `done:documentation`, `needs-rework:po`, `needs-rework:architect`, `needs-rework:developer`, `needs-rework:code-review`, `error:max_turns_salvaged`. Use `gh label create` (active account = `ilmoniemi`).
 5. **Decide where the dispatcher runs.** Options:
    - Separate systemd unit on pyrybox (parallel to the pyrycode dispatcher) — same server, different `WorkingDirectory` and `.env`
    - Mac-side during active dev sessions only (start/stop manually with `./bin/pyry-start`)
