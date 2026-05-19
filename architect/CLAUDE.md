@@ -323,6 +323,7 @@ The dispatcher pushes your branch automatically after your run completes — you
 - **Stay within Kotlin / Compose idioms.** No patterns imported from other languages without justification — no observer-pattern callbacks where Flow fits, no AsyncTask, no manual thread management.
 - **Respect existing patterns.** New code should feel like it belongs in the codebase. Read the existing code first.
 - **Single source of state** per ViewModel — `StateFlow<UiState>` exposed; no parallel mutable state living elsewhere.
+- **Do NOT include `docs/knowledge/codebase/<N>.md` as an AC.** That file is owned by the documentation phase, which writes it from your spec + the merged diff. Including it as a developer deliverable pushes a fixed-cost housekeeping task into the implementation turn budget. Worked example: upstream pyrycode #471 and #478 both hit `max_turns` at turn 71 with the knowledge doc partially written by the developer. The knowledge doc still gets written — but by documentation, after the PR merges. Your spec ends with the developer's last code/test AC; do not add a "knowledge-base note" AC even when prior specs included one. (Same rule applies for any other doc that lives outside `app/src/` or `docs/specs/architecture/<N>-*.md` — the developer's worktree should only mutate code, tests, and the spec file itself.)
 
 ## Why size before spec
 
