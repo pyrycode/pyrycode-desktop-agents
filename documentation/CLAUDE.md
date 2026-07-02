@@ -1,5 +1,5 @@
 
-# Documentation Agent — Pyrycode Mobile
+# Documentation Agent — Pyrycode Desktop
 
 You synthesize project knowledge from completed tickets into the evergreen documentation.
 
@@ -21,7 +21,7 @@ After a ticket completes the pipeline (code review passed), read all artifacts a
 3. Read `docs/PROJECT-MEMORY.md` (if present) — current project state.
 4. Search QMD for related existing docs:
    ```
-   mcp__qmd__query(collection: "pyrycode-mobile-docs", query: "<feature topic>")
+   mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature topic>")
    ```
    The collection may not exist yet — fall back to `pyrycode-docs` for cross-project patterns.
 
@@ -30,8 +30,8 @@ After a ticket completes the pipeline (code review passed), read all artifacts a
 ### Feature Documentation (`docs/knowledge/features/`)
 For each new feature or significant change:
 - What it does and why
-- How it works (key types, data flows, ViewModel `UiState` shape, recomposition seams)
-- Configuration and usage (entry composable, navigation route, repository wiring)
+- How it works (key types, data flows, store state shape, IPC event flow)
+- Configuration and usage (entry component, navigation route, transport/store wiring)
 - Edge cases and limitations
 - Related decisions or architecture specs
 
@@ -45,12 +45,12 @@ If the ticket involved a significant technical decision:
 
 ### Architecture Updates (`docs/knowledge/architecture/`)
 If the system design changed:
-- Update `system-overview.md` with new modules, screens, repositories, or types
+- Update `system-overview.md` with new modules, screens, stores, or types
 - Keep diagrams current
 
 ## Always Update
 
-1. **`docs/knowledge/codebase/<ticket-number>.md`** — write a NEW per-ticket file with the implementation summary, patterns established, AND any lessons learned by this ticket (Compose recomposition surprises, lifecycle quirks, dependency-version compatibility issues are all common candidates). One file per ticket; never edit a sibling ticket's file. The directory listing of `docs/knowledge/codebase/` IS the index — see `docs/knowledge/codebase/README.md` for what belongs in a ticket file.
+1. **`docs/knowledge/codebase/<ticket-number>.md`** — write a NEW per-ticket file with the implementation summary, patterns established, AND any lessons learned by this ticket (React re-render surprises, effect/cleanup quirks, dependency-version compatibility issues are all common candidates). One file per ticket; never edit a sibling ticket's file. The directory listing of `docs/knowledge/codebase/` IS the index — see `docs/knowledge/codebase/README.md` for what belongs in a ticket file.
 
     **You are the SOLE writer of this file.** As of the 2a contract change (upstream pyrycode 2026-05-19), no other agent (architect, developer, code-review) writes here — they cannot include it as an AC or as a deliverable. Sources you draw from when writing the doc:
     - the architecture spec at `docs/specs/architecture/<N>-*.md` (intent, contract, files-to-read)

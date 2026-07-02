@@ -1,10 +1,10 @@
-# Pyrycode-Mobile Dispatcher — Working Notes
+# Pyrycode-Desktop Dispatcher — Working Notes
 
-This is the dispatcher and agent-prompts repo for **pyrycode-mobile**. The Kotlin / Jetpack Compose source for the mobile app lives in `pyrycode-mobile/` (a sibling repo for now — see dispatcher header note about activation-time placement); this repo houses the orchestration layer that turns GitHub Project tickets into agent runs against the mobile codebase.
+This is the dispatcher and agent-prompts repo for **pyrycode-desktop**. The TypeScript / React / Electron source for the desktop app lives in `pyrycode-desktop/` (a sibling repo for now — see dispatcher header note about activation-time placement); this repo houses the orchestration layer that turns GitHub Project tickets into agent runs against the desktop codebase.
 
-This repo is forked from `pyrycode/agents`. As of 2026-05-09 the dispatcher source itself lives in [`pyrycode/agent-dispatcher`](https://github.com/pyrycode/agent-dispatcher) — a separate repo consumed via git submodule at `dispatcher/`. Only the mobile-specific agent prompts (Kotlin/Compose, Material 3 token enforcement, `--repo pyrycode/pyrycode-mobile`, etc.) and `bin/` launcher scripts live in this repo.
+This repo is forked from `pyrycode/pyrycode-mobile-agents` (which was itself forked from `pyrycode/agents`). As of 2026-05-09 the dispatcher source itself lives in [`pyrycode/agent-dispatcher`](https://github.com/pyrycode/agent-dispatcher) — a separate repo consumed via git submodule at `dispatcher/`. Only the desktop-specific agent prompts (TypeScript/React/Electron, `--repo pyrycode/pyrycode-desktop`, etc.) and `bin/` launcher scripts live in this repo.
 
-**Activation status: dormant** — set up but not running. The dispatcher waits for pyrycode-mobile to reach Phase 2 ticketing. See the activation-time notes in `dispatcher/src/dispatch.ts` header.
+**Activation status: dormant** — set up but not running. The dispatcher waits for pyrycode-desktop ticketing to begin. See the activation-time notes in `dispatcher/src/dispatch.ts` header.
 
 ## Dispatcher source layout
 
@@ -25,7 +25,7 @@ Cross-file deps form a clean DAG: pipeline-decisions → blockers; dispatch-sele
 
 ## Use codegraph for dispatcher-side reading
 
-`pyrycode-mobile-agents/` is indexed for codegraph (`.codegraph/`, gitignored). Default to `mcp__codegraph__codegraph_*` MCP tools for symbol-level questions before reaching for grep:
+`pyrycode-desktop-agents/` is indexed for codegraph (`.codegraph/`, gitignored). Default to `mcp__codegraph__codegraph_*` MCP tools for symbol-level questions before reaching for grep:
 
 - **Before changing or removing any exported function** — run `codegraph_callers <name>` to find the call sites across `dispatch.ts`, `reconcile.ts`, sibling lib files, and the test files. The dispatcher's pure-function decomposition means a "small" rename typically fans out to 3–5 sites.
 - **Before extending `dispatch.ts` with a new post-run handler** — run `codegraph_callees <name>` against neighbouring handlers (`decidePostRunLabels`, `runAutoAdvance`, `runReworkRouting`) to mirror their shape.
@@ -35,7 +35,7 @@ The same fall-back rules apply as in agent CLAUDE.mds: use grep/Read for comment
 
 **Re-index when finished:** the dispatcher's worktree symlink (`decideCodegraphSymlink` in `worktree.ts`) points spawned agents at the canonical `.codegraph/`. After a substantive change to dispatcher source (i.e. inside the submodule), run `codegraph index -f` from the submodule root so the next dispatcher run sees the new symbols. (`codegraph sync` doesn't always pick up changes — confirmed 2026-05-09.)
 
-**Querying from a different cwd (e.g. the vault):** the codegraph MCP tools accept a `projectPath` argument — pass `/Users/<you>/Workspace/Projects/pyrycode-mobile-agents` to query the dispatcher from any session, regardless of where Claude Code was launched. Without `projectPath` the MCP server falls back to CWD, which usually isn't the project root.
+**Querying from a different cwd (e.g. the vault):** the codegraph MCP tools accept a `projectPath` argument — pass `/Users/<you>/Workspace/Projects/pyrycode-desktop-agents` to query the dispatcher from any session, regardless of where Claude Code was launched. Without `projectPath` the MCP server falls back to CWD, which usually isn't the project root.
 
 ## Test-first
 
