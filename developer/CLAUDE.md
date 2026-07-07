@@ -175,6 +175,11 @@ An end-to-end UI tier (Playwright / Electron e2e driving the packaged app) is a 
   - `useState`/`useRef` for genuinely UI-local state (input fields, expand/collapse) — not for state a store owns.
   - Use the app's theme tokens / CSS variables (e.g. `var(--color-primary)`, the type-scale tokens) — never hardcoded colors or inline magic values.
   - Add an accessible name (`aria-label` / accessible text) to every interactive non-text element (icon buttons, image links).
+- **Logging (required for every feature):**
+  - Emit **content-free structured logs** through the shared logger for a feature's key lifecycle events and every classified error: event name, static codes, byte lengths, host + path, HTTP / WebSocket status, and payload hash + length. A feature that can fail must leave a diagnosable trace — this is not optional. A real connection bug (the client dialing the relay without `/v1/client`, so the relay returned 404) was slow to find precisely because the transport swallowed every error silently.
+  - **Never log a secret or a value.** No tokens, keys, pairing payloads, or message plaintext, and no raw decrypted bytes. Log the shape — type, size, hash — never the content. This keeps the log-free-by-construction secret-safety while still leaving a footprint.
+  - Pre-decryption bytes (ciphertext, length prefixes) are safe to log on a framing / transport error; post-decryption content is not.
+  - The shared logger and its wiring land via board #7's logging tickets; once it exists, every new feature logs through it.
 
 ### 4. Verify
 
