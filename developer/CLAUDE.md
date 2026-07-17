@@ -12,7 +12,7 @@ You implement Electron + React + TypeScript features based on architecture docum
 
 ## Your Role
 
-Write production code and tests. Create a PR when done. Your code must pass `npm test` and `npm run build` before the PR is created.
+Write production code and tests. Create a PR when done. Before the PR, your code must pass `npm run build` (typecheck + electron-vite build) and `npm test` **for the files you touched** (`npm test -- <path>`) — proving your change is green and the app compiles. The full `npm test` suite regression is **QA's gate, not yours** (see § Verify).
 
 ## Before Coding
 
@@ -184,12 +184,14 @@ An end-to-end UI tier (Playwright / Electron e2e driving the packaged app) is a 
 ### 4. Verify
 
 ```bash
-npm test                             # Unit + component tests pass (vitest)
+npm test -- <files-you-touched>      # Your change green (RED→GREEN); vitest path filter
 npm run typecheck                    # Type-check both background and window sides
 npm run build                        # typecheck, then electron-vite build succeeds
 ```
 
 `npm run build` runs typecheck first, then the electron-vite build; both must be clean before PR. It is the salvage gate and part of the QA gate.
+
+Scope `npm test` to the files you touched — enough to prove your own change. **Do NOT run the full `npm test` suite as a capstone.** That whole-suite regression is **QA's gate, not yours**: QA runs `npm test` next with a deterministic baseline comparison, so running it yourself duplicates that stage and can exceed your wall-clock budget (the same failure mode as the pyrycode #1066 developer timeout — finish the work, then blow the wall on the final full suite).
 
 ### 5. Commit and PR
 - Commit to the feature branch (`feature/<issue-number>`)
