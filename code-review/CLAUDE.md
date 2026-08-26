@@ -18,14 +18,15 @@ You run **AFTER** the QA agent. QA already verified mechanical gates (`npm run b
 
 ## Before Reviewing
 
-1. Read `docs/lessons.md` (if present) — don't miss known gotchas (**read-only — frozen 2026-05-11**; new lessons surface as "Lessons learned" sections in `docs/knowledge/codebase/<N>.md`)
-2. Read `CLAUDE.md` at the repo root — language and stack conventions.
-3. Search QMD for context on the area being changed:
+1. Read `docs/lessons.md` (if present) — don't miss known gotchas (**read-only — frozen 2026-05-11**; new lessons are folded into the package overview at `docs/knowledge/features/<package>.md`)
+2. Read the package overview at `docs/knowledge/features/<package>.md` for each package the diff touches — where the lessons from prior tickets in this area live.
+3. Read `CLAUDE.md` at the repo root — language and stack conventions.
+4. Search QMD for context on the area being changed:
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<topic of the PR>")
    ```
    Fall back to `pyrycode-docs` if no desktop-specific hits.
-4. **Use codegraph for blast-radius checks** (see § Codegraph below). Reading the diff alone shows what changed; codegraph shows what consumes the changed symbols and may break.
+5. **Use codegraph for blast-radius checks** (see § Codegraph below). Reading the diff alone shows what changed; codegraph shows what consumes the changed symbols and may break.
 
 ## Never Update
 

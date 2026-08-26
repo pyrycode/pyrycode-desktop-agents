@@ -17,9 +17,10 @@ After a ticket completes the pipeline (code review passed), read all artifacts a
 ## Before Writing
 
 1. Read the ticket, architecture spec, code review, and the actual code changes.
-2. Read `docs/knowledge/INDEX.md` (if present) — know what docs already exist.
-3. Read `docs/PROJECT-MEMORY.md` (if present) — current project state.
-4. Search QMD for related existing docs:
+2. Read the package overview at `docs/knowledge/features/<package>.md` for each package the diff touched. You are editing these; know what is already there so you update rather than append.
+3. Read `docs/knowledge/INDEX.md` (if present) — know what docs already exist.
+4. Read `docs/PROJECT-MEMORY.md` (if present) — current project state.
+5. Search QMD for related existing docs:
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature topic>")
    ```
@@ -50,23 +51,30 @@ If the system design changed:
 
 ## Always Update
 
-1. **`docs/knowledge/codebase/<ticket-number>.md`** — write a NEW per-ticket file with the implementation summary, patterns established, AND any lessons learned by this ticket (React re-render surprises, effect/cleanup quirks, dependency-version compatibility issues are all common candidates). One file per ticket; never edit a sibling ticket's file. The directory listing of `docs/knowledge/codebase/` IS the index — see `docs/knowledge/codebase/README.md` for what belongs in a ticket file.
+1. **The package overview at `docs/knowledge/features/<package>.md`** — fold this ticket's lessons into the document covering the package the work touched. **Do not write a per-ticket file.** `docs/knowledge/codebase/` is frozen as of 2026-08-26: read it as history, never add to it.
 
-    **You are the SOLE writer of this file.** As of the 2a contract change (upstream pyrycode 2026-05-19), no other agent (architect, developer, code-review) writes here — they cannot include it as an AC or as a deliverable. Sources you draw from when writing the doc:
-    - the architecture spec at `docs/specs/architecture/<N>-*.md` (intent, contract, files-to-read)
+    **Put each lesson in the section it belongs to**, not in a bin at the bottom. A re-render lesson goes under that document's rendering section; a fixture lesson under its testing section. Do not create a "Lessons" or "Gotchas" heading — no package overview has one and none should gain one.
+
+    **Evergreen, not append-only.** When this ticket invalidates something the overview already says, correct it in place. A stale paragraph is worse than a missing one.
+
+    Sources you draw from, in order of usefulness:
+    - the PR body's optional **Lessons learned** section, if present (the developer flags non-obvious surprises there)
+    - the code-review PR comment, if a finding shaped the final implementation
+    - the architecture spec at `docs/specs/architecture/<N>-*.md`, where it records a rejected alternative or resolves an Open Question in a surprising direction
     - the merged diff (what actually shipped)
-    - the PR body's optional **Lessons learned** section, if present (the developer flags non-obvious surprises there — lift those bullets into your "Lessons learned" section, verbatim where they're clear, paraphrased where the PR body is terse)
-    - the code-review PR comment (if a finding shaped the final implementation, that's worth a "Patterns established" line)
 
 2. **`docs/knowledge/INDEX.md`** — add one-line summary for any new feature/decision/architecture doc you created. **You are the ONLY agent that writes here.** Combined with `serial: true` this guarantees no concurrent write conflicts.
 
 ## Never Update
 
-- **`docs/PROJECT-MEMORY.md`** — human-maintained project conventions. Appending here caused stranded PRs on 2026-05-09, 2026-05-10, and 2026-05-11 (across pyrycode + agent-dispatcher-v2 pipelines); the "Patterns established" section was dropped 2026-05-11 in the v2 project. If you find yourself wanting to add a section here, the rule is: it goes in `codebase/<N>.md` instead.
-- **`docs/lessons.md`** — frozen 2026-05-11 in the canonical pipeline. Pre-existing content (in any fork's target repo) stays as historical reference. **New lessons go into the relevant ticket's `docs/knowledge/codebase/<N>.md`** under a "Lessons learned" section. Splitting lessons per-ticket eliminates the shared-append conflict surface (same fix shape as PROJECT-MEMORY.md).
+- **`docs/PROJECT-MEMORY.md`** — human-maintained project conventions. Appending here caused stranded PRs on 2026-05-09, 2026-05-10, and 2026-05-11 (across pyrycode + agent-dispatcher-v2 pipelines); the "Patterns established" section was dropped 2026-05-11 in the v2 project. If you find yourself wanting to add a section here, it goes in the package overview instead.
+- **`docs/lessons.md`** — frozen 2026-05-11 in the canonical pipeline. Pre-existing content stays as historical reference. New lessons go into the package overview for the package the work touched.
+- **`docs/knowledge/codebase/<N>.md`** — **frozen 2026-08-26.** The 316 existing files stay as history and stay searchable via QMD. Never add one, never edit one.
 - **Pre-2026-05-10 frozen blocks** anywhere in the repo — historical content. Don't touch.
 
-The per-ticket-file convention exists because shared-append docs guarantee merge conflicts when two feature branches add to them on top of a marching-forward main — not just from concurrency, but from any branch that didn't merge before its peers added their entries. Per-ticket files eliminate the hot line entirely.
+Per-ticket files were the earlier fix for shared-append merge conflicts, and the write-safety they bought was real. They were retired because the archive they produced was read by nobody except this agent, and because `serial: true` on this phase already holds that line: these documents can only be touched by one process at a time. Pyrycode made the same move on 2026-08-19.
+
+Stale-branch conflicts can still occur if main moved during your run. If a shared doc conflicts during merge, file a follow-up ticket rather than resolving it creatively.
 
 ## Sole-writer guarantee (INDEX.md)
 

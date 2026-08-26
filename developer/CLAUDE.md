@@ -16,9 +16,10 @@ Write production code and tests. Create a PR when done. Before the PR, your code
 
 ## Before Coding
 
-1. Read `docs/PROJECT-MEMORY.md` (if present) — understand current project conventions (**read-only — never edit this file**; per-ticket patterns go in `docs/knowledge/codebase/<N>.md`, written by the documentation phase)
+1. Read `docs/PROJECT-MEMORY.md` (if present) — understand current project conventions (**read-only — never edit this file**; this ticket's lessons are folded into the package overview by the documentation phase)
 2. Read `CLAUDE.md` at the repo root — language conventions, build commands, source layout.
-3. Read `docs/lessons.md` (if present) — avoid known pitfalls (**read-only — frozen 2026-05-11**; new lessons go in `docs/knowledge/codebase/<N>.md` "Lessons learned" sections)
+3. Read `docs/lessons.md` (if present) — avoid known pitfalls (**read-only — frozen 2026-05-11**; new lessons go into the package overview)
+4. Read the package overview at `docs/knowledge/features/<package>.md` for each package you touch — that is where the lessons from prior tickets in this area live, and it is the doc most likely to hold one that applies to you.
 
 ## Never Update
 
@@ -26,7 +27,7 @@ You write code (under `src/`) only. **Never edit these shared docs:**
 - `docs/PROJECT-MEMORY.md` — human-maintained
 - `docs/lessons.md` — frozen
 - `docs/knowledge/INDEX.md` — documentation phase appends here, no one else
-- `docs/knowledge/codebase/<N>.md` — documentation phase owns this. If a sibling ticket's knowledge doc is useful, read it; never write your own. Writing this file inside the implementation turn budget consistently pushed runs over the cap (upstream pyrycode #471, #478 both hit max_turns at turn 71 with the knowledge doc partially written) — it now lives entirely in the documentation phase, which writes it from the merged diff + the spec.
+- `docs/knowledge/` — the documentation phase owns everything under it and folds this ticket's lessons into the package overview after code review. Read freely; never write. Writing a knowledge doc inside the implementation turn budget consistently pushed runs over the cap (upstream pyrycode #471, #478 both hit max_turns at turn 71 with the doc partially written). `docs/knowledge/codebase/<N>.md` is frozen as of 2026-08-26: read it as history, never add one.
 
 If you discover a lesson worth recording (React re-render surprise, IPC lifecycle quirk, dependency-version gotcha), capture it as a "Lessons learned" bullet in your PR body. The documentation phase lifts those bullets into the knowledge doc — you don't write the doc itself.
 4. Search QMD for related code patterns:
@@ -200,7 +201,7 @@ Scope `npm test` to the files you touched — enough to prove your own change. *
   - **Summary**: one paragraph — what changed and why
   - **Issue**: `Closes #<n>`
   - **Testing**: one-line verification (test / typecheck / build status)
-  - **Lessons learned** (optional): bulleted, only if something non-obvious surfaced. The documentation phase lifts these into `docs/knowledge/codebase/<N>.md`.
+  - **Lessons learned** (optional): bulleted, only if something non-obvious surfaced. The documentation phase folds these into the package overview. Omit the section entirely when nothing did — an empty lesson is worse than none.
 
 The spec at `docs/specs/architecture/<N>-*.md` is the authoritative record of design decisions. Code review reads the spec, not the PR body — do not restate the spec's contents or mirror its AC list in your PR. A short PR body is the target shape; long PR bodies were a fixed-cost tail that contributed to upstream max_turns salvages (pyrycode #471, #478).
 
