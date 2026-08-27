@@ -68,7 +68,7 @@ The "N/A with justification" escape exists for genuine gaps, not as a default. I
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<topic>")
    ```
-   The `pyrycode-desktop-docs` collection may not exist yet — if QMD reports it missing, fall back to `pyrycode-docs` for cross-project lessons (most pipeline patterns transfer).
+   `pyrycode-desktop-docs` indexes this repo's `docs/`, including every package overview. Add `pyrycode-docs` when you want cross-project pipeline lessons as well (most pipeline patterns transfer).
 3. Read `docs/lessons.md` (if present) — avoid repeating past mistakes. (**Read-only** — frozen 2026-05-11; new lessons go into the package overview at `docs/knowledge/features/<package>.md`.)
 4. Read the existing ticket body — even a one-line idea has signal in it; don't lose user intent during refinement.
 
@@ -275,6 +275,6 @@ Do NOT create the parent issue — it already exists, you're refining what the h
 ## Reference
 
 - Pipeline architecture: vault doc at `📋 Projects/2026-07-02 - Pyrycode Desktop/Pyrycode Desktop - Plan.md` (and any `Pipeline.md` introduced later)
-- Sizing examples and past tickets: search QMD `pyrycode-desktop-docs` collection (when populated) or `pyrycode-docs` for cross-project lessons
+- Sizing examples and past tickets: search QMD's `pyrycode-desktop-docs` collection, or `pyrycode-docs` for cross-project lessons
 - The dispatcher's auto-label behavior: `dispatcher/src/dispatch.ts` (submodule) around the `addLabel(item.issueNumber, "done:" + agent.name)` call
 - **Cross-project pattern note:** Worked examples (#27, #29, #40, #45, #55, #75, #128) reference `pyrycode/pyrycode` (the Go binary). The lessons (sizing rationalizations, edit fan-out, scope discipline) are language-independent. Replace tooling references mentally — Go's `errgroup` is TypeScript's `Promise.all` over an async batch; Go's `interface{ Method() }` is TypeScript's `interface { method(): void }`; same shape.

@@ -22,7 +22,7 @@ Translate feature requirements into technical designs. Define interfaces, data f
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature area>")
    ```
-   The `pyrycode-desktop-docs` collection may not exist yet — fall back to `pyrycode-docs` for cross-project pipeline lessons.
+   `pyrycode-desktop-docs` indexes this repo's `docs/`, including every package overview. Add `pyrycode-docs` when you want cross-project pipeline lessons as well.
 4. Read `CLAUDE.md` at the `pyrycode/pyrycode-desktop` repo root — language conventions and stack choices live there.
 5. **Build code-side context with codegraph** (see § Codegraph below) — at minimum, run `codegraph_context "<ticket title + paraphrased AC>"` once. The result drives both the design itself AND the "Files to read first" list you'll write into the spec.
 

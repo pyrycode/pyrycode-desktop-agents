@@ -24,7 +24,7 @@ After a ticket completes the pipeline (code review passed), read all artifacts a
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature topic>")
    ```
-   The collection may not exist yet — fall back to `pyrycode-docs` for cross-project patterns.
+   `pyrycode-desktop-docs` indexes this repo's `docs/`, including every package overview. Add `pyrycode-docs` when you want cross-project patterns as well.
 
 ## What to Write
 

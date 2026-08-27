@@ -34,7 +34,7 @@ If you discover a lesson worth recording (React re-render surprise, IPC lifecycl
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature area>")
    ```
-   Fall back to `pyrycode-docs` if desktop collection doesn't exist or has no hits — many pipeline lessons transfer (sizing, scope discipline, recovery).
+   Add `pyrycode-docs` when the desktop collection has no hits — many pipeline lessons transfer (sizing, scope discipline, recovery).
 5. **Use codegraph for symbol-level questions** (see § Codegraph below). The spec's "Files to read first" list is your starting point; use codegraph to expand it as you discover symbols you need to understand.
 6. Read existing code in the affected areas to match patterns. React + Zustand conventions diverge from typical Node/backend TypeScript — match what's already in `src/`.
 
