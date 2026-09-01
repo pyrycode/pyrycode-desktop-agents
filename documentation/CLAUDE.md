@@ -57,6 +57,8 @@ If the system design changed:
 
     **Evergreen, not append-only.** When this ticket invalidates something the overview already says, correct it in place. A stale paragraph is worse than a missing one.
 
+    **Split before you write, when the document you are about to touch is over 50000 bytes.** The dispatcher tells you which ones are, at the end of your prompt. This is not deferrable housekeeping: search cuts a document into roughly 900-token chunks and can only prefer a heading boundary when one falls near the cut, so a document whose sections dwarf a chunk gets cut at paragraph breaks, is not retrievable at all, and a lesson folded into it is a lesson lost. Cut at `##` headings, and where a `##` section is itself over the cap cut it at its `###` headings. Keep the parent at its own path, since other agent prompts name it and the rest of the tree links to it, and leave it as a map: a short lead paragraph and a linked list of the children. A section under 3000 bytes stays in the parent. Retarget any inbound `#anchor` link that pointed at a section you moved, and add every child to `docs/knowledge/INDEX.md`. `npm run check:docs` fails on a file left over the cap.
+
     Sources you draw from, in order of usefulness:
     - the PR body's optional **Lessons learned** section, if present (the developer flags non-obvious surprises there)
     - the code-review PR comment, if a finding shaped the final implementation
@@ -87,13 +89,19 @@ You (and only you) write to `docs/knowledge/INDEX.md`. The other four agents (po
 - **Link generously.** Cross-reference related docs, decisions, and features.
 - **Don't document process.** This is about the product, not about what the pipeline did.
 
-## Before you commit — clear the false headings
+## Before you commit — run the docs guard
 
-**Run `grep -rn '^#[0-9]' <the doc files you changed>` and repair every hit.** A paragraph that wraps with a ticket reference first, so that a line begins `#834`, is read by markdown as a top-level heading. That corrupts the document outline and moves the boundaries search cuts on when it chunks a long document, so a lesson folded into one of these files becomes harder to retrieve.
+**Run `npm run check:docs` and repair everything it reports across the whole features tree, not only the files you just wrote.** It enforces two rules, and both faults are ones this phase produces.
 
-Escape the hash rather than rejoining the line. `\#834` renders identically inside a paragraph and keeps the surrounding wrap width. Change nothing else: no sentence is reworded and no ticket reference is removed.
+**False headings.** A paragraph that wraps with a ticket reference first, so that a line begins `#834`, is read by markdown as a top-level heading. That corrupts the document outline and moves the boundaries search cuts on. Escape the hash rather than rejoining the line: `\#834` renders identically inside a paragraph and keeps the surrounding wrap width. Change nothing else, so no sentence is reworded and no ticket reference is removed.
 
-**Scope this to the files you wrote in this run.** The tree carries a large pre-existing backlog of these, and clearing it belongs in its own ticket rather than in a diff about something else. This repo has no guard wired into a build, unlike the parent repository, where the same fault turned `make check` red on `main` on 2026-09-01 and every open PR inherited the failure. Here the cost is silent, so nothing will catch what you leave behind.
+**The size cap.** Same rule and same reasoning as § Always Update, and the guard is where it is enforced rather than trusted.
+
+**Repair the whole tree, because the set moves.** A wrapped line introduced by one ticket's docs run can self-heal under the next one's rewrap, and a new one can appear in a file you never opened, so the file at fault is usually not the file you touched. You are the sole writer under `docs/knowledge/` and this phase is serial, so nothing else is mid-edit on a file you fix.
+
+The guard is in the fork's gate list, so a fault left behind turns the pre-verifier gates red and the ticket routes to rework. In the parent repository the same fault turned `make check` red on `main` on 2026-09-01, every open PR inherited it, and eight verifier runs spent budget proving the red gate was not theirs before a human cleared it.
+
+The frozen per-ticket archive is out of the guard's scope and holds 66 false headings of its own. Leave them: that tree is closed to writes.
 
 ## Output
 
