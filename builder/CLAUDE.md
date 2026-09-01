@@ -325,7 +325,7 @@ Your worktree is a fresh checkout with no `node_modules`. Run `npm install` once
 
 - **Unit tests** for pure logic (wire types, frame codec, mappers, event reducers, store state derivations) — co-located `*.test.ts` next to the code under test. Run with `npm test -- <path>` (vitest). Use `vi.useFakeTimers()` for timing-dependent code.
 - **Renderer tests are static server renders, and nothing in this repo can click.** `vitest.config.ts` sets `environment: 'node'`; there is no `jsdom`, no `happy-dom` and no testing-library in the tree. Renderer specs render through `renderToStaticMarkup` and assert on markup — no DOM, no effects, no event handlers. When a component needs interactive state, make its rendered output a pure function of that state so both forms stay unit-testable. **Do not add a DOM environment**; that is a deliberate, separate decision, never a side effect of the first ticket that wants one.
-- **Interaction belongs in the Playwright tiers under `e2e/`.** When the ticket's acceptance is a transition the user drives (a click, a keystroke, a focus change), cover it with a fake-transport spec under `e2e/` and run that one spec with `npx playwright test e2e/<spec>.spec.ts`. The whole `npm run e2e` tier is not your gate.
+- **Interaction belongs in the Playwright tiers under `e2e/`.** When the ticket's acceptance is a transition the user drives (a click, a keystroke, a focus change), cover it with a fake-transport spec under `e2e/` and run that one spec with `npx playwright test e2e/<spec>.spec.ts` after `npm run build`, since the fixture launches the built app from `out/`. The whole tier is the dispatcher's gate, not yours: it runs `npx playwright test` after your PR opens, so a spec you did not touch that goes red comes back to you already triaged.
 - **Fakes over mocks** at the transport / IPC boundary (the `FakeRelayTransport` shape). Reach for `vi.fn()` / `vi.mock` only for stores or handlers that need fine-grained interaction verification.
 
 Then implement: follow your plan's interfaces and data flows; make the tests pass (**GREEN**). Keep changes minimal — don't refactor unrelated code.
@@ -363,7 +363,7 @@ npm test -- <files-you-touched>      # Your change green (RED→GREEN); vitest p
 npm run build                        # typecheck both sides, then electron-vite build (main + preload + renderer)
 ```
 
-Scope `npm test` to the files you touched — enough to prove your own change. **Do NOT run the full `npm test` suite as a capstone.** The whole-suite regression is the verifier's gate: the dispatcher runs `npm test` and `npm run build` deterministically after your PR opens, and a red routes back to you with the failure context already triaged. Running it yourself duplicates that gate and can exceed your wall-clock budget (the pyrycode #1066 shape — the run finished the work, then the final full sweep blew the wall). `npm run build` stays in your gate because it is also the salvage gate and it is the only thing that typechecks the side you did not write tests for.
+Scope `npm test` to the files you touched — enough to prove your own change. **Do NOT run the full `npm test` suite as a capstone.** The whole-suite regression is the verifier's gate: the dispatcher runs `npm test`, `npm run build` and the full fake-transport Playwright tier deterministically after your PR opens, and a red routes back to you with the failure context already triaged. Running it yourself duplicates that gate and can exceed your wall-clock budget (the pyrycode #1066 shape — the run finished the work, then the final full sweep blew the wall). `npm run build` stays in your gate because it is also the salvage gate and it is the only thing that typechecks the side you did not write tests for.
 
 Same rule for the real-claude e2e tier (`npm run e2e:real-claude`): it is **not yours to run**. On this fork the dispatcher's automatic gate is not configured, so a ticket labelled `needs-real-claude` parks in Inbox after verification for the operator to run `npm run e2e:real:gate` by hand.
 
@@ -501,7 +501,7 @@ npm run build                        # typecheck, then electron-vite build (main
 npx playwright test e2e/<spec>.spec.ts   # One fake-transport interaction spec, when the ticket adds one
 ```
 
-The full `npm test` and `npm run build` pair is the verifier's gate, run by the dispatcher before the verifier spawns. Don't run the full suite yourself — see § B2.
+The full `npm test`, `npm run build` and `npx playwright test` set is the verifier's gate, run by the dispatcher before the verifier spawns. Don't run the full suites yourself — see § B2.
 
 ## Dispatcher Permission Denial
 
