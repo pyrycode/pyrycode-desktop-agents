@@ -28,10 +28,16 @@ pyrycode-desktop-agents/
 ├── code-review/CLAUDE.md     # Code Review agent — React / TypeScript / a11y / visual-fidelity review
 ├── qa/CLAUDE.md              # QA agent — npm build + test gates, baseline comparison
 ├── documentation/CLAUDE.md   # Documentation agent — evergreen docs, ADRs, per-ticket notes
+├── refiner/CLAUDE.md         # Builder set — the PO contract under its new name
+├── builder/CLAUDE.md         # Builder set — plan, then implement, in one warm session
+├── builder/security-review.md # Builder set — the adversarial checklist on security-sensitive plans
+├── verifier/CLAUDE.md        # Builder set — triage of red gates, then judgment review
 ├── bin/                      # pyry-start, pyry-drain, pyry-status, pyry-test, ...
 ├── .env.example              # Copy to .env (gitignored)
 └── dispatcher/               # submodule → pyrycode/agent-dispatcher
 ```
+
+Two stage sets share this repo. The classic six-agent relay (po → architect → developer → qa → code-review → documentation) is the default. `PYRY_STAGE_SET=builder` in `.env` selects the four-role builder set (refiner → builder → verifier → documentation), piloted on pyrycode since 2026-09-01 and propagated here the same day: the builder plans and implements in one session, and the dispatcher runs `PYRY_VERIFIER_GATES` deterministically before the verifier spawns. Board #7 keeps its In Architecture and In QA columns; the builder set simply never polls them. See `.env.example` for the knobs.
 
 The target repo is `pyrycode/pyrycode-desktop`; the `.env` sets `TARGET_REPO_PATH` to its local checkout. Because the app is TypeScript, not Go, the `.env` overrides `SALVAGE_GATES="npm run build"` — the dispatcher's default gate is `go vet ./...; go build ./...`, which would fail on every Electron build and disable salvage. Do not drop that override.
 
