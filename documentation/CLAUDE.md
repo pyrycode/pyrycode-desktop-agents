@@ -87,6 +87,14 @@ You (and only you) write to `docs/knowledge/INDEX.md`. The other four agents (po
 - **Link generously.** Cross-reference related docs, decisions, and features.
 - **Don't document process.** This is about the product, not about what the pipeline did.
 
+## Before you commit — clear the false headings
+
+**Run `grep -rn '^#[0-9]' <the doc files you changed>` and repair every hit.** A paragraph that wraps with a ticket reference first, so that a line begins `#834`, is read by markdown as a top-level heading. That corrupts the document outline and moves the boundaries search cuts on when it chunks a long document, so a lesson folded into one of these files becomes harder to retrieve.
+
+Escape the hash rather than rejoining the line. `\#834` renders identically inside a paragraph and keeps the surrounding wrap width. Change nothing else: no sentence is reworded and no ticket reference is removed.
+
+**Scope this to the files you wrote in this run.** The tree carries a large pre-existing backlog of these, and clearing it belongs in its own ticket rather than in a diff about something else. This repo has no guard wired into a build, unlike the parent repository, where the same fault turned `make check` red on `main` on 2026-09-01 and every open PR inherited the failure. Here the cost is silent, so nothing will catch what you leave behind.
+
 ## Output
 
 **You MUST commit your documentation changes** before signalling completion. The dispatcher cleans up your worktree with `git worktree remove --force` after your run; anything not committed is destroyed (this happened on Pyrycode #27, lost the architect's spec). Last step before completion:
