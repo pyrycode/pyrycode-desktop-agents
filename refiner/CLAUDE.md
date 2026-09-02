@@ -144,8 +144,8 @@ A ticket ships as one `size:s` ticket only if **every** line below holds. Any on
 
 | Limit | Boundary |
 |---|---|
-| Production source files created or modified | ≤ 3 |
-| Total written work (production + tests + helpers + per-branch log calls + plan-doc edits) | ≤ 400 lines |
+| Production source files created or modified | ≤ 5 |
+| Total written work (production + tests + helpers + per-branch log calls + plan-doc edits) | ≤ 800 lines |
 | New exported types, interfaces, React components or stores | ≤ 5 |
 | Consumer call sites needing simultaneous update | ≤ 10 |
 | Acceptance criteria | ≤ 5 |
@@ -161,6 +161,8 @@ A ticket ships as one `size:s` ticket only if **every** line below holds. Any on
 
 This does not conflict with the shared-test-infrastructure split pattern below. That pattern's trigger is reuse by **more than one** ticket. One consumer means one ticket.
 
+**When the floor and the ceiling disagree, the floor wins.** If merging a one-consumer slice into its consumer takes the merged ticket over a line of the table, merge anyway, write the overage on the `Estimate:` line, and refine it as one ticket. The ceiling protects against a budget miss, which since 2026-09-01 costs one continuation leg. The floor protects against a ticket that cannot be verified on its own, which no resume fixes. Measured on the pyrycode #1720 split, 2026-09-02: four one-consumer pairs were cut apart to stay under the old 400-line ceiling (map then bound, retain then resolve, reconcile then wire, and a docs-only tail), and ten tickets carried what five would have. The first three children still measured over the ceiling and shipped at a third of the builder's budget.
+
 Measured on this repo 2026-08-24, over the last 100 closed tickets: 66 of the 80 refined ones carried exactly five acceptance criteria, against a median body of 7757 characters, and 19 of the 100 were closed as not planned. A limit that binds on four tickets in five regardless of how big each one is has stopped measuring the ticket; it is being used as a template. Measured on `pyrycode/pyrycode` 2026-09-01: five tickets to commit one captured test file, each carrying 4-5 acceptance criteria against a ceiling of 5, $213 spent by mid-morning against a projection near $330.
 
 **This is not tidiness, because the builder sizes from the body you wrote.** A body inflated to the ceiling measures as an oversized ticket, gets split, and each child written back up to the ceiling measures oversized again. Traced on `pyrycode/pyrycode` #1714 (2026-08-24): it became #1728/#1729, then #1728 became #1730/#1731, then #1730 became #1732/#1733 — three rounds of splitting in one morning, none prompted by anything learned from writing code, and **each child's body was longer than the parent it was cut from** (3940 chars → 10531 → 18683).
@@ -173,11 +175,11 @@ This is what breaks the loop described above. When the builder sizes from prose,
 
 Count **total written work**, not production lines. Tests are the bulk of it and are not free: each test is its own edit-and-debug cycle. A ticket you'd call "100 lines of production code" is routinely 300-400 lines of total written work once tests, helper functions, and per-branch log calls land. Three upstream specs on 2026-05-16 sized by production LOC alone and came in at 541, 596, and 1071 actual lines; all three needed salvage. A React state machine plus store plus fixtures plus per-branch log calls accumulates the same way.
 
-**These targets are deliberately tighter than the raw budget.** The builder has 200 turns and 40 minutes of wall clock for plan plus implementation. The table is calibrated well inside both because runs still hit the caps at this setting. Do not relax a line by reasoning that the builder "has plenty of turns."
+**The line and file ceilings were recalibrated to the builder's budget on 2026-09-02.** The 400-line, 3-file table was set for the developer at 135 turns and 25 minutes. The builder has 200 turns and 40 minutes for plan plus implementation, and across its first 21 runs on this repo (2026-09-01 evening to 2026-09-02) no run exhausted either: the median run used 57 turns and 10 minutes, the heaviest 82 turns and 19 minutes (both #912). The median merged PR in that sample added about 920 lines including plan and docs, so most tickets were already landing above the old ceiling and inside a third of the budget. 800 lines sits inside a two-times margin of the heaviest run seen. Line count predicts turns weakly (#911 landed 1820 added lines in 47 turns, #912 landed 1310 in 82), so the ceiling bounds the tail rather than sizing the typical ticket, and the call-site and reject-branch lines still bind regardless of line count. **Re-measure after ten more builder runs before moving either number again:** read turns and duration from the `USAGE` block at the end of each builder log, and grep the logs for `Resume leg`. A run that exhausts a second leg is the first real evidence for tightening; do not tighten from memory of the old set.
 
 **No `size:m` rationalization escape.** Earlier versions of this guide allowed an M tier with a "Sized M because: <factor>" paragraph. That escape was removed 2026-05-02 after Pyrycode #45 (sized M, 5-file cross-package coordination, 10 AC) exhausted the implementation budget and required recovery. The six-agent relay's design stage carried an identical "Why M, not split" escape and it went the same way — both were rationalization paths that consistently produced budget-exhaustion failures.
 
-These boundaries are mechanical. If the ticket trips one, you split — you do not size it S "because the parts are coupled" or "because the seams aren't obvious." Couple-sounding work splits cleanly more often than not; the builder's plan on each child surfaces seams the parent body couldn't.
+These boundaries are mechanical. If the ticket trips one after the floor has been applied, you split — you do not size it S "because the parts are coupled" or "because the seams aren't obvious." Couple-sounding work splits cleanly more often than not; the builder's plan on each child surfaces seams the parent body couldn't.
 
 **The builder can override your size downward (S → XS) but cannot bump up.** M is not on the builder's lattice either. If the builder identifies oversized work, it routes back via `needs-rework:refiner` with a split proposal — never bump to M.
 
@@ -197,20 +199,20 @@ Cross-module work that needs real coordination usually does read as several deli
 
 ## Splitting
 
-**Default to split — and know what each side of that default costs.** Measured on `pyrycode/pyrycode` across 88 recent tickets on 2026-09-01, priced from the agent session transcripts under the six-agent relay. The absolute numbers were measured there; the shape carries:
+**Default to one ticket per deliverable, sized against the table. Do not lean to split.** Until 2026-09-02 this guide leaned to split, because a run that exhausted its budget was salvaged into a draft PR, labelled `error:max_turns_salvaged`, and parked for a person. That is no longer what happens. The dispatcher on this fork carries resume-in-place: an exhausted run gets one continuation leg with a fresh budget in the same session before any salvage, so a budget miss costs a builder leg, not an interruption. Pyrycode #29 and #40, the two exhaustions the old default cited, both ran before any resume existed. An earlier version of this paragraph waited for a live resume to be observed on this fork before flipping. That wait was circular: the split default kept every run under half its budget, so no resume could fire. The flip rests on the shipped mechanism and the measured headroom instead.
+
+What each side costs on this repo's builder set, measured 2026-09-02 from the run logs of #919, #920 and #921:
 
 | Outcome | Measured cost |
 |---|---|
-| One ticket, all agents, clean run | ~$32 |
-| One ticket needing a second implementation pass | ~$49 median, worst observed $56 |
-| Extra cost of that rework pass | ~$16 |
-| Extra cost of one more split | ~$32 |
+| One ticket through refiner, builder, verifier and documentation, clean | ~$8-16, median ~$12 |
+| The builder leg alone | ~$4-8 |
+| Extra cost of one more split | ~$12, plus a refiner pass on each child |
+| Extra cost of a budget miss that resumes | ~one builder leg |
 
-An over-split ticket is **not** free. It costs about twice the rework pass it avoids. Earlier versions of this guide said a ticket that's "too small" is never a problem and priced an oversized one at $5-10; the first claim was wrong and the second priced the implementation leg only, which is about a fifth of the pipeline.
+An extra split costs about twice the resume leg it was insuring against, and it no longer buys the safety it used to: on `pyrycode/pyrycode` under the old 400-line table the first three children of #1720 each measured over the ceiling anyway and shipped at a third of the builder's budget. For the record, the figures this table replaces were measured on `pyrycode/pyrycode` under the six-agent relay set on 2026-09-01 across 88 tickets: ~$32 per clean ticket, ~$16 per rework pass, ~$32 per extra split. The shape was the same. Only the parked ticket made splitting the safer side, and that reason is gone.
 
-**What still justifies leaning to split is the parked ticket, not the dollars.** When an implementation run exhausts its budget the dispatcher salvages the work into a draft PR, labels the ticket `error:max_turns_salvaged`, and stops. Nothing re-dispatches it. It waits for a human, and that interruption is worth far more than $16. Pyrycode #29 and #40 both exhausted the implementation budget ($3.84 and $5.16 respectively) and required JSONL-replay recovery.
-
-**The dispatcher on this fork now carries resume-in-place**, one continuation leg with a fresh budget before salvage. This default flips once a live resume has been observed working on this fork: an exhausted run that simply continues costs the rework pass and nothing else, and at that point bundling is the cheaper choice. Until then lean to split — but inside the floor in the Sizing Guide and the depth cap below, both of which bind regardless.
+**What still splits:** more than one deliverable (the Sizing Test), a line of the table exceeded after the floor has been applied, and the always-split patterns below. **If a run ever exhausts a second leg, that ticket is the first evidence for tightening this again.** Record it on the ticket rather than reinstating the old default from memory.
 
 ### Split depth: stop at two
 
