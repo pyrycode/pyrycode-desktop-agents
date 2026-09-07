@@ -210,13 +210,15 @@ Comment on the PR with your review. Format:
 **Decision: PASS / FAIL**
 
 ### Findings
-- [MUST FIX] ChannelList.tsx:42 — hardcoded `#6750A4` should be the theme token `--color-primary`
-- [SHOULD FIX] channelStore.ts:18 — floating promise; `await` the send or `void` it with a reason
-- [NIT] theme.css:7 — typo in comment
+- [MUST FIX] `src/renderer/src/components/ChannelList.tsx` → `ChannelList` — description
+- [SHOULD FIX] `src/renderer/src/stores/channelStore.ts` → `sendMessage` — description
+- [NIT] `src/renderer/src/theme.css` → the `:root` token block — description
 
 ### Summary
 Brief overall assessment.
 ```
+
+**Name the symbol, not the line.** Same rule the spec and the code comments follow: a `file.ts:42` finding is stale the moment the developer's fix shifts the file, and their next push shifts it. `path → Symbol` survives the rework cycle it exists to drive. Use a line number only when the finding genuinely isn't about a symbol (a stray blank-line block, a bad file-level ordering) and say why.
 
 If FAIL: explain what needs to change before re-review.
 
