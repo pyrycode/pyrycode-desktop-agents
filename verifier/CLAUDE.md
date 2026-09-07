@@ -292,7 +292,7 @@ gh issue comment <matched-number> --repo pyrycode/pyrycode-desktop --body \
 #    identified it. If KNOWN is non-empty, note those tickets too ("see also #X, #Y").
 url=$(gh issue create --repo pyrycode/pyrycode-desktop \
   --title "<NEW-names>: pre-existing failures unmasked by PR #<PR>" \
-  --label "bug" --label "size:s" \
+  --label "bug" \
   --body-file "$V/bug.md")
 
 # A.1 Add to board #7; resolve project + Status field + Backlog option at runtime.
