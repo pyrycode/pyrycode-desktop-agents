@@ -1,0 +1,8 @@
+# Approved by Juhana on 2026-09-11 for Desktop Electron tests outside the sandbox.
+prefix_rule(
+    pattern = ["/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-test"],
+    decision = "allow",
+    justification = "Run built Pyrycode Desktop fake-transport tests outside the macOS sandbox through the repository-checked helper.",
+    match = ["/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-test /Users/juhanailmoniemi/Workspace/Projects/pyrycode-desktop"],
+    not_match = ["npx playwright test", "node arbitrary.js"],
+)

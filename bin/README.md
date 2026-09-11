@@ -19,6 +19,17 @@ so the dispatcher knows where the consumer's per-agent CLAUDE.md files,
 | `pyry-typecheck` | Run `pnpm typecheck` in `dispatcher/` (the submodule). |
 | `pyry-test` | Run `pnpm test` in `dispatcher/` (the submodule). Pass-through args. |
 
+## MacBook Electron test permission
+
+`pyrycode-desktop-test` is the checked helper for built Desktop fake-transport tests.
+Install it as `~/.codex/bin/pyrycode-desktop-test` with executable permissions.
+Install `pyrycode-desktop-test.rules` under `~/.codex/rules/` after operator approval.
+New Codex processes load the rule. Invoke the helper by its absolute installed path
+with an absolute Desktop worktree root and an optional `e2e/name.spec.ts` argument.
+It accepts only the configured Desktop repository and its linked Git worktrees.
+It does not install dependencies, build the app, or run real-daemon tests.
+Request execution outside the sandbox on the first attempt.
+
 ## Invocation
 
 From `agents/`:

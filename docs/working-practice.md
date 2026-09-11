@@ -53,6 +53,22 @@ attributing a failure to the change. Search existing issues before filing anothe
 
 ## Source and evidence checks
 
+### Electron tests on macOS
+
+Request approved execution outside the Codex sandbox before the first Electron
+test launch. This applies to builders and verifiers, focused Playwright specs,
+full suites, baseline comparisons and real-daemon tests. Unit tests and builds
+can remain sandboxed. A sandbox launch rejection is an environment failure.
+Do not count it as a product test failure or repeat it across the suite.
+Never unset CODEX_SANDBOX or change Electron security settings to bypass the check.
+
+On this MacBook, invoke the approved test helper as a separate command:
+`/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-test WORKTREE [SPEC]`.
+It runs the built app's fake-transport suite, or one relative `e2e/*.spec.ts` path.
+Build first. The helper accepts only this Desktop checkout and its Git worktrees.
+Use the normal approval path for real-daemon tests and other test options.
+New Codex processes load the permission rule.
+
 Use the target's `docs/knowledge/features/development-verification.md` when sizing,
 building or reviewing code. It covers source-search limitations, validation boundaries,
 protocol tests, capture evidence and artifact survival. Read the relevant section,
