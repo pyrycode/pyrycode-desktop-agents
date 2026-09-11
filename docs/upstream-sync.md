@@ -14,9 +14,9 @@ Desktop retains its Electron, React and TypeScript rules, Figma requirements,
 measured sizing limits, browser tests, and live-daemon gate configuration.
 The daemon repository's live Go test instructions do not apply here.
 
-The Pyrycode-only Codex permission helpers are not a valid Desktop destination.
-They are intentionally absent from this consumer's practice until separate
-Desktop-scoped permissions have been approved and installed.
+Juhana approved matching routine Codex permissions for Desktop on 2026-09-11.
+Desktop-scoped helpers enforce this repository, board 7, its ticket branches and
+its own publishing folder. See the shared practice for supported actions.
 
 Land the companion product knowledge change before updating this consumer.
 The new role prompts need its knowledge map and verification topic.
