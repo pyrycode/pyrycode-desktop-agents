@@ -58,6 +58,23 @@ building or reviewing code. It covers source-search limitations, validation boun
 protocol tests, capture evidence and artifact survival. Read the relevant section,
 not the whole historical memory archive. Current code wins over an old observation.
 
+## GitHub comments use body files
+
+Write every issue or PR comment into a unique Markdown file under
+`/Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/`.
+Create the file with the file-editing tool. Then call the approved pipeline helper
+with `issue-comment ISSUE ABSOLUTE_BODY_PATH` or
+`pr-comment PR ABSOLUTE_BODY_PATH` as a separate command.
+
+Do not pass comment prose as an inline shell argument. Even valid shell quoting
+can prevent Codex from recognizing the approved command. On ticket 1237, escaped
+apostrophes in the comment caused the command to reach approval review instead.
+The compatibility `comment ISSUE TEXT` form of the issue helper still exists,
+but pipeline roles must use the body-file forms above.
+
+This is the method for future actions. A previously rejected action still needs
+operator review before retrying it. Do not change the method to evade a rejection.
+
 ## Codex approval rules on the MacBook
 
 Juhana approved persistent Pyrycode Desktop reads, comment changes and any label edits
@@ -81,7 +98,7 @@ Do not override the repository with a second option or use shell substitutions.
 The helper `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-issue-action` also remains
 approved. Use its absolute path with exactly three arguments:
 
-- `comment ISSUE TEXT` posts one new comment.
+- `comment ISSUE TEXT` is a compatibility form. Pipeline roles use body-file comments as required above.
 - `add-label ISSUE LABEL` adds any label by name.
 - `remove-label ISSUE LABEL` removes any label by name.
 
