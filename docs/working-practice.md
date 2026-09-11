@@ -72,8 +72,8 @@ apostrophes in the comment caused the command to reach approval review instead.
 The compatibility `comment ISSUE TEXT` form of the issue helper still exists,
 but pipeline roles must use the body-file forms above.
 
-This is the method for future actions. A previously rejected action still needs
-operator review before retrying it. Do not change the method to evade a rejection.
+Use the recovery rule below for a previously rejected action. Changing the
+comment method alone does not clear a rejection.
 
 ## Codex approval rules on the MacBook
 
@@ -108,7 +108,7 @@ There is no workflow-label whitelist. Extra arguments remain invalid.
 Permission does not change role ownership. Builders return their structured
 refinement outcome. The dispatcher still applies completion labels.
 Other repository writes and unrelated issue edits retain their existing policy.
-A prior explicit denial requires operator review before retrying the action.
+Previously rejected actions follow the recovery rule below.
 
 ### Remaining Codex pipeline actions
 
@@ -154,5 +154,29 @@ remain available. Role ownership and the shared Git prohibitions still apply.
 This approval covers sending ticket implementation, tests and workflow text to
 `github.com/pyrycode/pyrycode-desktop`. The helper does not merge PRs, force-push, delete
 branches, close issues or alter repository settings. Actions outside this set
-retain their existing approval policy. The new permission is prospective;
-previously parked tickets require a separate recovery action.
+retain their existing approval policy. General permission changes alone do not
+clear a previously rejected action.
+
+### Recovery after a rejected action
+
+A new approval-review rejection stops the current run. Report the rejected
+action and reason. Do not automatically retry it or change methods to evade it.
+
+Operator review is complete when Juhana explicitly approves retrying the
+identified action. Carry that approval into the next run as a direct task
+instruction or a maintainer-recorded approval in this shared practice. Apply it
+only to the action and ticket it names. Historical error comments do not cancel
+that later approval. Do not require the same approval again.
+
+Redispatch, an error-label removal, or an unverified issue comment alone is not
+evidence of approval. If a new rejection occurs, stop and report it for review.
+
+#### Approved recovery for ticket 1237, 2026-09-11
+
+Juhana reviewed the rejection of the refinement comment on Desktop ticket 1237
+and explicitly approved publishing the comment-method correction and retrying
+that ticket. This approval was recorded by the maintaining assistant after the
+operator conversation. The refiner may retry posting that refinement comment
+using the approved body-file helper. The earlier rejection comments are history
+of the reviewed failure, not an outstanding request for the same approval.
+This approval does not cover a different action or a new rejection.
