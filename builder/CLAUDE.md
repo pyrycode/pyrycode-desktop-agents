@@ -390,7 +390,7 @@ npm run build                        # typecheck both sides, then electron-vite 
 
 Scope `npm test` to the files you touched — enough to prove your own change. **Do NOT run the full `npm test` suite as a capstone.** The whole-suite regression is the verifier's gate: the dispatcher runs `npm test`, `npm run build` and the full fake-transport Playwright tier deterministically after your PR opens, and a red routes back to you with the failure context already triaged. Running it yourself duplicates that gate and can exceed your wall-clock budget (the pyrycode #1066 shape — the run finished the work, then the final full sweep blew the wall). `npm run build` stays in your gate because it is also the salvage gate and it is the only thing that typechecks the side you did not write tests for.
 
-Same rule for the real-claude e2e tier (`npm run e2e:real-claude`): it is **not yours to run**. On this fork the dispatcher's automatic gate is not configured, so a ticket labelled `needs-real-claude` parks in Inbox after verification for the operator to run `npm run e2e:real:gate` by hand.
+Same rule for the real-claude e2e tier (`npm run e2e:real-claude`): it is **not yours to run**. The MacBook dispatcher runs the configured live gate after verification with its existing Claude credential. Keep `needs-real-claude` on the issue, implement the required live spec, and hand off its execution in the PR and completed result. Pending live acceptance is not a builder error. Codex agents deliberately lack Claude credentials; do not fetch credentials or run the live tier yourself. If the dispatcher gate is disabled on another host, the ticket parks for operator validation instead of skipping acceptance.
 
 ### B3. Commit, push, PR
 

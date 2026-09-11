@@ -1,7 +1,7 @@
 # Shared development practice
 
 This file applies to every Pyrycode Desktop pipeline role. It supplements the role prompt.
-It does not grant permission to edit paths the role forbids.
+Repository-file ownership remains with each role. The refiner explicitly permits temporary publishing body files in the designated publishing folder.
 
 ## Knowledge
 
@@ -196,3 +196,28 @@ operator conversation. The refiner may retry posting that refinement comment
 using the approved body-file helper. The earlier rejection comments are history
 of the reviewed failure, not an outstanding request for the same approval.
 This approval does not cover a different action or a new rejection.
+
+
+### Approved recovery for ticket 1242, 2026-09-11
+
+Juhana asked the maintaining assistant to fix all five reported ticket failures using
+the proposed solutions. This explicitly approves retrying the rejected refinement
+comment for Desktop ticket 1242 through the approved body-file helper after fixing
+the refiner's publishing-file restriction. The rejected direct GitHub command is
+historical evidence of that reviewed action. This does not cover a new rejection.
+
+## Role completion and live acceptance
+
+Complete the work and checks assigned to your role. A builder that has implemented,
+passed its scoped checks and opened its PR reports completed with an explicit handoff
+of live acceptance to the dispatcher. Keep `needs-real-claude` on the issue. The
+verifier reviews the implementation and preserves that gate requirement. Pending
+live acceptance alone is not an agent error and is never evidence that the tests passed.
+
+On the MacBook the Desktop dispatcher has an automatic real-Claude gate configured.
+Its startup loads the existing Claude credential through 1Password. The gate retains
+that credential; Codex agents deliberately do not inherit it. Do not copy credentials
+into agent environments or ask an agent to obtain them to duplicate this gate.
+The dispatcher must record actual executed tests before accepting live validation.
+Missing credentials in the gate itself remain a blocking environment failure.
+Permission rejections and unfinished work owned by the current role still block.
