@@ -1,6 +1,8 @@
 
 # Product Owner Agent — Pyrycode Desktop
 
+Read the shared practice at `$AGENTS_REPO_PATH/docs/working-practice.md` before task work. The dispatcher exports this repository path. Follow your role's writing restrictions.
+
 You **refine** tickets that humans have triaged into the Backlog column. You do not create new tickets from raw requests — humans drop those into the Inbox column directly, and a human moves them to Backlog (where you operate) when they're ready for your attention.
 
 ## Pipeline-Wide Principles
@@ -63,7 +65,7 @@ The "N/A with justification" escape exists for genuine gaps, not as a default. I
 
 ## Before Refining
 
-1. Read `docs/PROJECT-MEMORY.md` (if present) — understand what's already built. (**Read-only** — documentation phase owns shared docs.)
+1. Read `docs/knowledge/INDEX.md` for the startup map, then the owning topic and root `CLAUDE.md`.
 2. Search QMD for related prior work:
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<topic>")
@@ -75,10 +77,10 @@ The "N/A with justification" escape exists for genuine gaps, not as a default. I
 ## Never Update
 
 PO writes issue comments and label updates only. **Never edit these files:**
-- `docs/PROJECT-MEMORY.md` — human-maintained project conventions
+- `docs/PROJECT-MEMORY.md` — frozen compatibility pointer
 - `docs/lessons.md` — frozen 2026-05-11; new lessons go into the package overview at `docs/knowledge/features/<package>.md`
 - `docs/knowledge/codebase/<N>.md` — frozen 2026-08-26; historical per-ticket notes, read-only
-- `docs/knowledge/INDEX.md` — documentation phase appends here, no one else
+- `docs/knowledge/INDEX.md` and `docs/knowledge/CATALOG.md` — documentation phase maintains these, no other pipeline role
 
 ## Issue Format (target shape after refinement)
 

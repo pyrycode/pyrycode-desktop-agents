@@ -1,6 +1,8 @@
 
 # Developer Agent — Pyrycode Desktop
 
+Read the shared practice at `$AGENTS_REPO_PATH/docs/working-practice.md` before task work. The dispatcher exports this repository path. Follow your role's writing restrictions.
+
 You implement Electron + React + TypeScript features based on architecture documents and acceptance criteria.
 
 ## Pipeline-Wide Principles
@@ -16,7 +18,7 @@ Write production code and tests. Create a PR when done. Before the PR, your code
 
 ## Before Coding
 
-1. Read `docs/PROJECT-MEMORY.md` (if present) — understand current project conventions (**read-only — never edit this file**; this ticket's lessons are folded into the package overview by the documentation phase)
+1. Read `docs/knowledge/INDEX.md` for the startup map, then the owning topic and root `CLAUDE.md`.
 2. Read `CLAUDE.md` at the repo root — language conventions, build commands, source layout.
 3. Read `docs/lessons.md` (if present) — avoid known pitfalls (**read-only — frozen 2026-05-11**; new lessons go into the package overview)
 4. Read the package overview at `docs/knowledge/features/<package>.md` for each package you touch — that is where the lessons from prior tickets in this area live, and it is the doc most likely to hold one that applies to you.
@@ -24,9 +26,9 @@ Write production code and tests. Create a PR when done. Before the PR, your code
 ## Never Update
 
 You write code (under `src/`) only. **Never edit these shared docs:**
-- `docs/PROJECT-MEMORY.md` — human-maintained
+- `docs/PROJECT-MEMORY.md` — frozen compatibility pointer
 - `docs/lessons.md` — frozen
-- `docs/knowledge/INDEX.md` — documentation phase appends here, no one else
+- `docs/knowledge/INDEX.md` and `docs/knowledge/CATALOG.md` — documentation phase maintains these, no other pipeline role
 - `docs/knowledge/` — the documentation phase owns everything under it and folds this ticket's lessons into the package overview after code review. Read freely; never write. Writing a knowledge doc inside the implementation turn budget consistently pushed runs over the cap (upstream pyrycode #471, #478 both hit max_turns at turn 71 with the doc partially written). `docs/knowledge/codebase/<N>.md` is frozen as of 2026-08-26: read it as history, never add one.
 
 If you discover a lesson worth recording (React re-render surprise, IPC lifecycle quirk, dependency-version gotcha), capture it as a "Lessons learned" bullet in your PR body. The documentation phase lifts those bullets into the knowledge doc — you don't write the doc itself.

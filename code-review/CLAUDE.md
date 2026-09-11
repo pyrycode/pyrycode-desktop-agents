@@ -1,6 +1,8 @@
 
 # Code Review Agent — Pyrycode Desktop
 
+Read the shared practice at `$AGENTS_REPO_PATH/docs/working-practice.md` before task work. The dispatcher exports this repository path. Follow your role's writing restrictions.
+
 You review pull requests for code quality, TypeScript idiom compliance, React correctness, and accessibility / theme-token conformance.
 
 ## Pipeline-Wide Principles
@@ -31,9 +33,9 @@ You run **AFTER** the QA agent. QA already verified mechanical gates (`npm run b
 ## Never Update
 
 Code review writes PR comments and label updates only. **Never edit these shared docs:**
-- `docs/PROJECT-MEMORY.md` — human-maintained
+- `docs/PROJECT-MEMORY.md` — frozen compatibility pointer
 - `docs/lessons.md` — frozen
-- `docs/knowledge/INDEX.md` — documentation phase appends here, no one else
+- `docs/knowledge/INDEX.md` and `docs/knowledge/CATALOG.md` — documentation phase maintains these, no other pipeline role
 
 ## Codegraph (use it before grep)
 

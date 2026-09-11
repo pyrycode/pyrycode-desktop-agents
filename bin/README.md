@@ -36,3 +36,38 @@ To run by short name from anywhere, add this dir to your PATH:
 export PATH="$HOME/Workspace/Projects/pyrycode-desktop-agents/bin:$PATH"
 ```
 (Personal preference; not required for the scripts to work.)
+
+## Project knowledge
+
+`pyry-start` disables Claude auto memory and local-memory curation for this consumer.
+The project and role instructions use the shared documentation workflow instead.
+See [shared development practice](../docs/working-practice.md). The host background
+curator also skips this fork when its `.env` contains `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`.
+
+## Agent runner
+
+Select the runner for one launch:
+
+```sh
+./bin/pyry-start --runner codex
+./bin/pyry-start --runner claude
+```
+
+The option overrides `PYRY_AGENT_RUNNER` from the environment or `.env` for that
+launch without changing the saved setting. `--runner=codex` is also accepted.
+Put launcher options before any dispatcher command. With no option, the existing
+saved setting applies; if none is set, Claude remains the default. Use `--help`
+for usage. Invalid or missing runner values fail before startup.
+
+Codex must be installed and authenticated on this host. It uses its configured
+default model and effort unless `PYRY_CODEX_MODEL` or `PYRY_CODEX_EFFORT` is set.
+
+Run `python3 bin/pyry-start.test.py` to verify option parsing and precedence with
+mocked dependencies. The tests never start a live dispatcher.
+
+Codex uses workspace sandboxing with automatic approval review. A blocked task
+parks without automatic retry and keeps its worktree. It uses the role's wall-clock
+budget, not Claude's turn budget, and never enters Claude's continuation path.
+The launch still processes the board; it is not a single-ticket mode.
+See [the dispatcher runner documentation](../dispatcher/README.md#selectable-agent-runner)
+for the result contract, limitations and verification.

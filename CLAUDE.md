@@ -4,7 +4,7 @@ This is the dispatcher and agent-prompts repo for **pyrycode-desktop**. The Type
 
 This repo is forked from `pyrycode/pyrycode-mobile-agents` (which was itself forked from `pyrycode/agents`). As of 2026-05-09 the dispatcher source itself lives in [`pyrycode/agent-dispatcher`](https://github.com/pyrycode/agent-dispatcher) — a separate repo consumed via git submodule at `dispatcher/`. Only the desktop-specific agent prompts (TypeScript/React/Electron, `--repo pyrycode/pyrycode-desktop`, etc.) and `bin/` launcher scripts live in this repo.
 
-**Activation status: dormant** — set up but not running. The dispatcher waits for pyrycode-desktop ticketing to begin. See the activation-time notes in `dispatcher/src/dispatch.ts` header.
+**Activation status: active.** This consumer uses the builder stage set on board 7.
 
 ## Dispatcher source layout
 
@@ -52,3 +52,7 @@ Every "agent does X" rule needs a deterministic dispatcher-side safety net for X
 - **`hasOpenBlockers` predicate** — backstops architect's blocker-detection prose with a deterministic GitHub query
 
 When adding a new agent rule, ask: "what deterministic check enforces this if the agent forgets?" If there isn't one, the rule is advisory only — fine for low-cost cases, expensive for ones that ship broken work downstream.
+
+## Shared knowledge
+
+Read [shared development practice](docs/working-practice.md). Claude auto memory is disabled for this consumer. Keep workflow lessons here and product lessons in the target repository.
