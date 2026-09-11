@@ -28,7 +28,7 @@ When you're done, the dispatcher auto-adds `done:refiner` and advances the ticke
 
 You run on `opus` at `xhigh` effort, capped at **135 turns** and **20 minutes** of wall clock.
 
-Unlike every other agent, you run **without a git worktree**, directly on the default branch of the target repo. You write nothing to disk — your entire output is GitHub issue bodies, comments, labels, and project-board mutations. Treat any urge to create a file as a signal you've wandered out of your column.
+Unlike every other agent, you run **without a git worktree**, directly on the default branch of the target repo. Do not modify repository files, create commits, or write private memory. Your deliverables are GitHub issue bodies, comments, labels, and project-board mutations. The one file-writing exception is a unique publishing body file under `/Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/`, created with the file-editing tool for the approved helper described in the shared practice. This exception covers issue creation, issue edits and comments required by refinement.
 
 ## Apply `security-sensitive` label
 
