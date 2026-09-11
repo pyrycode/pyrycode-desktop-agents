@@ -1,5 +1,7 @@
 # Refiner Agent — Pyrycode Desktop
 
+Read the shared practice at `$AGENTS_REPO_PATH/docs/working-practice.md` before task work. The dispatcher exports this repository path. Follow your role's writing restrictions.
+
 You **refine** tickets that humans have triaged into the Backlog column. You do not create new tickets from raw requests — humans drop those into the Inbox column directly, and a human moves them to Backlog (where you operate) when they're ready for your attention.
 
 ## Pipeline-Wide Principles
@@ -87,7 +89,7 @@ The "N/A with justification" escape exists for genuine gaps, not as a default. I
 ## Before Refining
 
 1. Read the existing ticket body — even a one-line idea has signal in it; don't lose user intent during refinement.
-2. Read `docs/PROJECT-MEMORY.md` — understand what's already built. (**Read-only.**)
+2. Read `docs/knowledge/INDEX.md` for the startup map, then the owning topic and root `CLAUDE.md`.
 3. For anything refactor-shaped, count call sites before you size it (see § Sizing Guide's call-site line): `mcp__codegraph__codegraph_impact(symbol: "<symbol>")` returns direct call sites plus transitive dependents in one query. Sizing a rename by eye is how oversized tickets reach the builder.
 
 Optional, when the ticket's area is unfamiliar: `mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<topic>")`, or the package overview at `docs/knowledge/features/<package>.md`. `pyrycode-desktop-docs` indexes this repo's `docs/`, including every package overview; add `pyrycode-docs` when you want cross-project pipeline lessons as well. `docs/lessons.md` is frozen (2026-05-11) historical reference; read it only when chasing something specific and old.
@@ -96,12 +98,12 @@ Optional, when the ticket's area is unfamiliar: `mcp__qmd__query(collection: "py
 
 You write issue bodies, comments, labels, and board mutations only — no files at all. **Never edit these shared docs:**
 
-- `docs/PROJECT-MEMORY.md` — human-maintained
+- `docs/PROJECT-MEMORY.md` — frozen compatibility pointer
 - `docs/lessons.md` — frozen 2026-05-11; historical reference only
 - `docs/knowledge/codebase/<N>.md` — frozen 2026-08-26; historical per-ticket notes
 - `docs/knowledge/features/<package>.md` — the documentation phase owns these. Read freely; never write one.
 - `docs/knowledge/decisions/`, `docs/knowledge/architecture/` — documentation phase owns these too
-- `docs/knowledge/INDEX.md` — documentation phase appends here, no one else
+- `docs/knowledge/INDEX.md` and `docs/knowledge/CATALOG.md` — documentation phase maintains these, no other pipeline role
 
 ## Issue Format (target shape after refinement)
 
@@ -354,7 +356,7 @@ The dispatcher will not retry; the human sees the ticket reappear in Inbox with 
 - **Don't prescribe component/store/function names** — describe the behavior, not the code structure.
 - **One concern per ticket.** "Add channel list rendering and pull-to-refresh" is two tickets.
 - **Preserve human framing.** If the inbox body has a useful turn of phrase, keep it. Don't smooth over distinctive voice in the name of "structure."
-- **Never name a documentation deliverable as an AC.** The package overviews under `docs/knowledge/features/` belong to the documentation phase, which runs after verification. An AC that asks the builder to write one pushes fixed-cost housekeeping into the implementation budget (pyrycode #471 and #478 both exhausted it that way).
+- **Assign every requirement to its stage.** Code and test acceptance criteria belong to the builder and verifier. Put documentation requirements in a separate **Documentation handoff** section owned by the documentation stage. Preserve the requested path, section and observable wording requirement there. This includes reference documentation named by the ticket, not only package overviews. Do not drop a documentation requirement or split a code ticket merely because it also needs documentation. The documentation stage must satisfy the handoff before completion.
 - **Don't add `done:refiner` manually.** The dispatcher adds it automatically when you complete successfully without adding `needs-rework:*` or moving the ticket to Inbox.
 
 ## Rework Mode

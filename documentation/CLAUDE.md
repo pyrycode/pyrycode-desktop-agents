@@ -1,6 +1,8 @@
 
 # Documentation Agent — Pyrycode Desktop
 
+Read the shared practice at `$AGENTS_REPO_PATH/docs/working-practice.md` before task work. The dispatcher exports this repository path. Follow your role's writing restrictions.
+
 You synthesize project knowledge from completed tickets into the evergreen documentation.
 
 ## Pipeline-Wide Principles
@@ -14,12 +16,26 @@ You synthesize project knowledge from completed tickets into the evergreen docum
 
 After a ticket completes the pipeline (code review passed), read all artifacts and update the project knowledge base. You are the last agent — your job is to ensure what was built is properly documented so future sessions and agents can find it.
 
+## Complete the documentation handoff
+
+Before capturing lessons, read the ticket, plan, PR body and verifier verdict for
+**Documentation handoff** items. Also check older documentation-only acceptance
+criteria. You own these requirements, including reference documentation outside
+`docs/knowledge/` named by the ticket.
+
+Update each named document and section to match the implemented behaviour. Verify
+the wording against the code and tests. Report each item as satisfied with its
+document path in your completion summary. Do not report completion while any item
+is pending. If a requirement needs a code change or remains contradictory, stop
+and report the blocker through the role's normal failure path. Never change code
+to make the documentation requirement true.
+
 ## Before Writing
 
 1. Read the ticket, architecture spec, code review, and the actual code changes.
 2. Read the package overview at `docs/knowledge/features/<package>.md` for each package the diff touched. You are editing these; know what is already there so you update rather than append.
-3. Read `docs/knowledge/INDEX.md` (if present) — know what docs already exist.
-4. Read `docs/PROJECT-MEMORY.md` (if present) — current project state.
+3. Read `docs/knowledge/INDEX.md`, then search `docs/knowledge/CATALOG.md` for the owning topic. Do not load the full catalog into every run.
+4. Read `docs/knowledge/INDEX.md` for the startup map, then the owning topic and root `CLAUDE.md`.
 5. Search QMD for related existing docs:
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature topic>")
@@ -28,13 +44,13 @@ After a ticket completes the pipeline (code review passed), read all artifacts a
 
 ## What to Write
 
-### Feature Documentation (`docs/knowledge/features/`)
-For each new feature or significant change:
-- What it does and why
-- How it works (key types, data flows, store state shape, IPC event flow)
-- Configuration and usage (entry component, navigation route, transport/store wiring)
-- Edge cases and limitations
-- Related decisions or architecture specs
+### Feature documentation
+
+Capture durable lessons in the owning topic. Record a rejected alternative, a test
+that could pass while broken, or a trap that cost a cycle. Do not duplicate the
+implementation summary already present in the diff and plan. If the ticket taught
+nothing durable and has no pending documentation handoff, a no-op is correct.
+Required reference documentation remains mandatory.
 
 ### Architecture Decision Records (`docs/knowledge/decisions/`)
 If the ticket involved a significant technical decision:
@@ -49,7 +65,7 @@ If the system design changed:
 - Update `system-overview.md` with new modules, screens, stores, or types
 - Keep diagrams current
 
-## Always Update
+## Where to record required changes
 
 1. **The package overview at `docs/knowledge/features/<package>.md`** — fold this ticket's lessons into the document covering the package the work touched. **Do not write a per-ticket file.** `docs/knowledge/codebase/` is frozen as of 2026-08-26: read it as history, never add to it.
 
@@ -57,7 +73,7 @@ If the system design changed:
 
     **Evergreen, not append-only.** When this ticket invalidates something the overview already says, correct it in place. A stale paragraph is worse than a missing one.
 
-    **Split before you write, when the document you are about to touch is over 50000 bytes.** The dispatcher tells you which ones are, at the end of your prompt. This is not deferrable housekeeping: search cuts a document into roughly 900-token chunks and can only prefer a heading boundary when one falls near the cut, so a document whose sections dwarf a chunk gets cut at paragraph breaks, is not retrievable at all, and a lesson folded into it is a lesson lost. Cut at `##` headings, and where a `##` section is itself over the cap cut it at its `###` headings. Keep the parent at its own path, since other agent prompts name it and the rest of the tree links to it, and leave it as a map: a short lead paragraph and a linked list of the children. A section under 3000 bytes stays in the parent. Retarget any inbound `#anchor` link that pointed at a section you moved, and add every child to `docs/knowledge/INDEX.md`. `npm run check:docs` fails on a file left over the cap.
+    **Split before you write, when the document you are about to touch is over 50000 bytes.** The dispatcher tells you which ones are, at the end of your prompt. This is not deferrable housekeeping: search cuts a document into roughly 900-token chunks and can only prefer a heading boundary when one falls near the cut, so a document whose sections dwarf a chunk gets cut at paragraph breaks, is not retrievable at all, and a lesson folded into it is a lesson lost. Cut at `##` headings, and where a `##` section is itself over the cap cut it at its `###` headings. Keep the parent at its own path, since other agent prompts name it and the rest of the tree links to it, and leave it as a map: a short lead paragraph and a linked list of the children. A section under 3000 bytes stays in the parent. Retarget any inbound `#anchor` link that pointed at a section you moved, and add every child to `docs/knowledge/CATALOG.md`. `npm run check:docs` fails on a file left over the cap.
 
     Sources you draw from, in order of usefulness:
     - the PR body's optional **Lessons learned** section, if present (the developer flags non-obvious surprises there)
@@ -65,11 +81,11 @@ If the system design changed:
     - the architecture spec at `docs/specs/architecture/<N>-*.md`, where it records a rejected alternative or resolves an Open Question in a surprising direction
     - the merged diff (what actually shipped)
 
-2. **`docs/knowledge/INDEX.md`** — add one-line summary for any new feature/decision/architecture doc you created. **You are the ONLY agent that writes here.** Combined with `serial: true` this guarantees no concurrent write conflicts.
+2. **`docs/knowledge/CATALOG.md`** — maintain one-line entries for added or removed documents. Update **`docs/knowledge/INDEX.md`** only when the startup map changes. Keep it short. You are the sole pipeline writer of both.
 
 ## Never Update
 
-- **`docs/PROJECT-MEMORY.md`** — human-maintained project conventions. Appending here caused stranded PRs on 2026-05-09, 2026-05-10, and 2026-05-11 (across pyrycode + agent-dispatcher-v2 pipelines); the "Patterns established" section was dropped 2026-05-11 in the v2 project. If you find yourself wanting to add a section here, it goes in the package overview instead.
+- **`docs/PROJECT-MEMORY.md`** — frozen compatibility pointer. Appending here caused stranded PRs on 2026-05-09, 2026-05-10, and 2026-05-11 (across pyrycode + agent-dispatcher-v2 pipelines); the "Patterns established" section was dropped 2026-05-11 in the v2 project. If you find yourself wanting to add a section here, it goes in the package overview instead.
 - **`docs/lessons.md`** — frozen 2026-05-11 in the canonical pipeline. Pre-existing content stays as historical reference. New lessons go into the package overview for the package the work touched.
 - **`docs/knowledge/codebase/<N>.md`** — **frozen 2026-08-26.** The 316 existing files stay as history and stay searchable via QMD. Never add one, never edit one.
 - **Pre-2026-05-10 frozen blocks** anywhere in the repo — historical content. Don't touch.
@@ -80,7 +96,7 @@ Stale-branch conflicts can still occur if main moved during your run. If a share
 
 ## Sole-writer guarantee (INDEX.md)
 
-You (and only you) write to `docs/knowledge/INDEX.md`. The other four agents (po, architect, developer, code-review) have explicit "Never update INDEX.md" rules. Combined with the `serial: true` flag on this phase, this means INDEX.md can only be touched by one process at a time. Stale-branch conflicts can still occur if main has moved during your run; if INDEX.md ever conflicts during merge, file a follow-up — the next architectural fix is auto-generation or dispatcher-side pre-doc rebase.
+You alone write to `docs/knowledge/INDEX.md` and `docs/knowledge/CATALOG.md`. The other four agents (po, architect, developer, code-review) have explicit "Never update INDEX.md" rules. Combined with the `serial: true` flag on this phase, this means INDEX.md can only be touched by one process at a time. Stale-branch conflicts can still occur if main has moved during your run; if INDEX.md ever conflicts during merge, file a follow-up — the next architectural fix is auto-generation or dispatcher-side pre-doc rebase.
 
 ## Constraints
 
