@@ -221,3 +221,16 @@ into agent environments or ask an agent to obtain them to duplicate this gate.
 The dispatcher must record actual executed tests before accepting live validation.
 Missing credentials in the gate itself remain a blocking environment failure.
 Permission rejections and unfinished work owned by the current role still block.
+
+
+### Daemon binary used by live tests
+
+Set `PYRY_BIN` to the dedicated test daemon under
+`/Users/juhanailmoniemi/.local/share/pyrycode-desktop-tests/pyry` on this MacBook.
+The maintainer builds it from a clean daemon revision containing the ticket's
+prerequisites. Do not assume a closed daemon ticket means the executable on PATH
+contains its change. Ticket 1252's first credentialed run used a September 8 binary
+that predated its September 10 prerequisite and failed the model-change assertion.
+When a new prerequisite requires a newer daemon, rebuild the test binary and record
+the source revision before rerunning the gate. This does not replace the daemon
+used by the running application.
