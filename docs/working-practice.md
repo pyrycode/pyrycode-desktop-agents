@@ -53,6 +53,13 @@ attributing a failure to the change. Search existing issues before filing anothe
 
 ## Source and evidence checks
 
+### Visual review
+
+Builders and verifiers use [the shared visual-review recipe](visual-review.md).
+Use a static component screenshot for isolated presentations and the existing
+fake-transport Electron fixture for integrated screens. Read the recipe before
+selecting a capture tool. Keep preview fixtures and images in role scratch space.
+
 ### Electron tests on macOS
 
 Request approved execution outside the Codex sandbox before the first Electron
