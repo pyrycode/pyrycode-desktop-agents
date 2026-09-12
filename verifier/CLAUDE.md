@@ -372,7 +372,7 @@ If the plan has a `## Design source` section with a Figma URL (not `N/A`), you M
    ```
    mcp__plugin_figma_figma__get_screenshot(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")
    ```
-3. **Fetch the diff's rendered output.** Read the `src/renderer/src/...` files touched by the PR and the static-markup assertions in their tests to render what the user sees; there is no Storybook in this repo.
+3. **Capture the diff's rendered output.** Follow `$AGENTS_REPO_PATH/docs/visual-review.md` and open the captured image. Use the static screenshot helper for an isolated presentation and the existing fake-transport Electron fixture for an integrated screen. Check that the capture belongs to the reviewed revision and required state. Keep fixtures and images under `$V`; do not edit the reviewed worktree. Static-markup assertions alone are not visual evidence.
 4. **Compare against the screenshot.** Look for:
    - **Token fidelity** — does the code use the app's theme tokens (CSS variables / the theme provider), or are there hardcoded hex values / inline style defaults? Hardcoded values are MUST FIX even if they happen to match the Figma.
    - **Layout shape** — flex / grid hierarchy, alignment, nesting. Spacing values should derive from Figma's auto-layout.
