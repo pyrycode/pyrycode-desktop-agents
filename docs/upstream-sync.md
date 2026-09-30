@@ -27,3 +27,15 @@ The launcher exports these values too.
 A running dispatcher retains its loaded code. Restart it in the operator's
 foreground terminal to activate the new runtime. Use `bin/pyry-start --runner codex`
 or `bin/pyry-start --runner claude`. No option preserves the saved runner setting.
+
+## Review overlap, 2026-09-30
+
+The launcher enables source review alongside deterministic checks for Claude and
+Codex. The source phase is read-only. Only the final verifier can publish after
+both finish. Both phases share the time budget. Claude also shares the turn limit.
+The final phase still owns Figma, live evidence, remote queries and red-gate triage.
+
+Desktop retains its saved Claude runner and ticket concurrency setting. Install
+the updated shared dispatcher and set `PYRY_VERIFIER_PARALLEL_REVIEW=1` locally.
+The running dispatcher keeps its loaded runtime until its next launch. This
+rollout must not stop or restart it.
