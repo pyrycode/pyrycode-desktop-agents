@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 class RunnerOptionTests(unittest.TestCase):
-    def launch(self, args, saved="claude", entry="pyry-start", auth_fails=False, missing_helper=False, stale_lock=False):
+    def launch(self, args, saved="claude", entry="pyry-start", auth_fails=False, missing_helper=False, stale_lock=False, parallel_review=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "bin").mkdir()
@@ -45,7 +45,7 @@ os.execv(command[0],command)
                 "node": '''#!/usr/bin/env python3
 import json,os,sys
 from pathlib import Path
-Path(os.environ['TEST_ROOT'],'result').write_text(json.dumps({'runner':os.environ.get('PYRY_AGENT_RUNNER'),'args':sys.argv[1:],'service_token_present':'OP_SERVICE_ACCOUNT_TOKEN' in os.environ}))
+Path(os.environ['TEST_ROOT'],'result').write_text(json.dumps({'runner':os.environ.get('PYRY_AGENT_RUNNER'),'args':sys.argv[1:],'service_token_present':'OP_SERVICE_ACCOUNT_TOKEN' in os.environ,'parallel_review':os.environ.get('PYRY_VERIFIER_PARALLEL_REVIEW'),'concurrency':os.environ.get('PYRY_MAX_CONCURRENT')}))
 ''',
                 "pgrep": "#!/bin/sh\nexit 1\n",
                 "sleep": "#!/bin/sh\nexit 0\n",
@@ -59,10 +59,25 @@ Path(os.environ['TEST_ROOT'],'result').write_text(json.dumps({'runner':os.enviro
                        TARGET_REPO_PATH=str(root / "target"), PYRY_AGENT_RUNNER="parent-value",
                        PYRY_AUTOMATION_ACCESS=str(fake / ("missing" if missing_helper else "automation-access")),
                        TEST_AUTH_FAILS="yes" if auth_fails else "no")
+            env['PYRY_MAX_CONCURRENT'] = '1'
+            env.pop('PYRY_VERIFIER_PARALLEL_REVIEW', None)
+            if parallel_review is not None:
+                env['PYRY_VERIFIER_PARALLEL_REVIEW'] = parallel_review
             run = subprocess.run(["sh", str(root / "bin" / entry), *args], env=env,
                                  capture_output=True, text=True, timeout=10)
             result = json.loads((root / "result").read_text()) if (root / "result").exists() else None
             return run, result, (root / "install").exists()
+
+    def test_review_overlap_enabled_without_changing_ticket_concurrency(self):
+        run, result, _ = self.launch(["--runner", "codex"])
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(result["parallel_review"], "1")
+        self.assertEqual(result["concurrency"], "1")
+
+    def test_review_overlap_can_be_explicitly_disabled(self):
+        run, result, _ = self.launch(["--runner", "codex"], parallel_review="0")
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(result["parallel_review"], "0")
 
     def test_codex_overrides_saved_claude(self):
         run, result, _ = self.launch(["--runner", "codex"])
