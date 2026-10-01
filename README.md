@@ -36,6 +36,8 @@ pyrycode-desktop-agents/
 ├── builder/ui-work.md        # Builder set — Figma reading and visual comparison, read on UI-visible tickets
 ├── builder/handoffs.md       # Builder set — splits, dependency waits, refinement gaps and bug filing, read when they apply
 ├── verifier/CLAUDE.md        # Builder set — triage of red gates, then judgment review
+├── verifier/review-criteria.md # Builder set — what both review phases judge against
+├── verifier/triage.md        # Builder set — red-gate procedure, read only in triage mode
 ├── bin/                      # pyry-start, pyry-drain, pyry-status, pyry-test, ...
 ├── .env.example              # Copy to .env (gitignored)
 └── dispatcher/               # submodule → pyrycode/agent-dispatcher
