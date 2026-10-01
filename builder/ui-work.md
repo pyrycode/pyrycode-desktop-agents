@@ -6,11 +6,11 @@ Read this on a UI-visible ticket, before you plan the UI. There is no separate d
 
 The design file for this repo is `g2HIq2UyPhslEoHRokQmHG`. Take the node ID from the ticket's `## Figma` URL. URLs write it with a hyphen, as in `102-4`.
 
-- **Design context.** `mcp__plugin_figma_figma__get_design_context(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")` returns the layout, typography, colour tokens and spacing. If a large frame comes back truncated, get the node map with `mcp__plugin_figma_figma__get_metadata` and read the children one at a time.
-- **Screenshot.** `mcp__plugin_figma_figma__get_screenshot` with the same arguments. Look at it, and do not write the summary from the structured data alone. Keep it, because you compare your render against it before the PR.
-- **Design tokens.** When the plan needs exact variable values, such as every mode of a new colour token, call `mcp__plugin_figma_figma__get_variable_defs` on a node that uses the variable, and find one by name with `mcp__plugin_figma_figma__search_design_system`. Write the hex values into the plan, so they survive a continuation leg or a rework.
+- **Design context.** `get_design_context(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")` returns the layout, typography, colour tokens and spacing. If a large frame comes back truncated, get the node map with `get_metadata` and read the children one at a time.
+- **Screenshot.** `get_screenshot` with the same arguments. Look at it, and do not write the summary from the structured data alone. Keep it, because you compare your render against it before the PR.
+- **Design tokens.** When the plan needs exact variable values, such as every mode of a new colour token, call `get_variable_defs` on a node that uses the variable, and find one by name with `search_design_system`. Write the hex values into the plan, so they survive a continuation leg or a rework.
 
-These are the Claude tool names. A runner with no Figma tools cannot do this step, and the run stops as blocked.
+The tool names above are the Figma server's own. Claude exposes them as `mcp__plugin_figma_figma__<tool>` and Codex as `mcp__figma__<tool>`, so `get_design_context` is `mcp__figma__get_design_context` on Codex. Both runners have Figma on this MacBook. If the Figma tools are missing or not signed in, the run stops as blocked.
 
 ## The plan's Design source section
 
