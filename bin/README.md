@@ -11,7 +11,7 @@ so the dispatcher knows where the consumer's per-agent CLAUDE.md files,
 
 | Script | Purpose |
 |---|---|
-| `pyry-start` | Start the dispatcher in the foreground. Pass-through args to `pnpm`. |
+| `pyry-start` | Start the dispatcher in the foreground. Pass-through args to `pnpm`. In its terminal, Ctrl-C drains and stops; Ctrl-R drains and restarts. |
 | `pyry-drain` | Send SIGTERM — dispatcher finishes the current dispatch, then exits cleanly. |
 | `pyry-status` | Report whether the dispatcher is running, on which Node binary, and since when. Exit 0 = running, 1 = stopped. |
 | `pyry-restart` | Drain → wait for in-flight dispatch to finish (30 min cap) → start fresh. |
@@ -29,6 +29,13 @@ with an absolute Desktop worktree root and an optional `e2e/name.spec.ts` argume
 It accepts only the configured Desktop repository and its linked Git worktrees.
 It does not install dependencies, build the app, or run real-daemon tests.
 Request execution outside the sandbox on the first attempt.
+
+## Keys in the dispatcher terminal
+
+- **Ctrl-C** drains: the current dispatch finishes, then the dispatcher stops. A second Ctrl-C within 5 s force-quits.
+- **Ctrl-R** drains, then runs `pyry-start` again from disk with the same arguments. New launcher, dispatcher and `.env` contents take effect. Ctrl-C before the drain ends cancels the restart.
+
+A restart happens only after a clean exit. The keys work only when `pyry-start` runs in a terminal. A running dispatcher started by an older `pyry-start` needs one ordinary restart first.
 
 ## Invocation
 
