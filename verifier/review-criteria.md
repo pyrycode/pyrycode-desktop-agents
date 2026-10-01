@@ -50,7 +50,7 @@ Report every finding you are confident about, with its severity. The severity sc
 
 This applies when the plan's `## Design source` section has a Figma URL. Skip it when the section says `N/A` with a reason. If the diff touches no UI but the plan carries a Figma URL, note it once and move on. The final verifier does this check.
 
-1. Fetch the design with `mcp__plugin_figma_figma__get_screenshot(fileKey: "g2HIq2UyPhslEoHRokQmHG", nodeId: "<nodeId>")`, taking the node from the plan's URL.
+1. Fetch the design with the Figma `get_screenshot` tool, `fileKey: "g2HIq2UyPhslEoHRokQmHG"` and the node from the plan's URL. Claude names it `mcp__plugin_figma_figma__get_screenshot` and Codex `mcp__figma__get_screenshot`.
 2. Capture the change's rendered output following `$AGENTS_REPO_PATH/docs/visual-review.md`. Use the static screenshot helper for an isolated presentation and the fake-transport Electron fixture for an integrated screen. Check the capture belongs to the reviewed revision and the required state. Keep fixtures and images under `$V`. Static-markup assertions are not visual evidence.
 3. Compare the two for theme tokens rather than literal values, layout and spacing from Figma's auto-layout, use of the app's shared components, decorations such as gradients and overlays, and assets taken from the design rather than substituted library icons.
 
