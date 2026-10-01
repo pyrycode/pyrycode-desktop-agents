@@ -1,111 +1,33 @@
 # Shared development practice
 
-This file applies to every Pyrycode Desktop pipeline role. It supplements the role prompt.
-Repository-file ownership remains with each role. The refiner explicitly permits temporary publishing body files in the designated publishing folder.
+Every Pyrycode Desktop pipeline role reads this alongside its role file. Your role file decides what you may write; nothing here widens that. The last two sections apply only to the roles they name.
 
 ## Knowledge
 
-Read the target repository's `docs/knowledge/INDEX.md` and the topic relevant to
-the ticket. Search the full catalog only when needed. Claude local memory is
-disabled. Do not read or write it, and do not use the historical archive as
-current instructions.
+Read the target repository's `docs/knowledge/INDEX.md` and the topic that owns the ticket. `docs/knowledge/CATALOG.md` is over 500 KB, so search it rather than reading it whole. Current code wins over an old observation. The per-ticket notes under `docs/knowledge/codebase/` and `docs/PROJECT-MEMORY.md` are history, not current instructions.
 
-Builders record durable discoveries in the PR's Lessons learned section.
-Verifiers record them in review comments. Refiners and product owners record them
-on the issue, including work that ends without a PR. Link the finding from any
-child that continues the work. Product lessons are folded into the owning topic
-by the documentation stage. Workflow lessons are folded into this file or the
-dispatcher docs by their maintainer. Do not create a second private note.
+When sizing, building or reviewing code, use the target's `docs/knowledge/features/development-verification.md`. It covers source-search limits, validation boundaries, protocol tests, capture evidence and artifact survival. Read the section you need.
 
-## Scope and sizing
+Claude local memory is disabled. Do not read or write it, and do not keep a private note of your own. Durable discoveries go where the next stage will find them: builders in the PR's Lessons learned section, verifiers in review comments, refiners on the issue, including work that ends without a PR. Link the finding from any child ticket that continues the work. The documentation stage folds product lessons into the owning topic. Workflow lessons are folded into this file or the dispatcher docs by their maintainer.
 
-Ask what the user can do differently before plumbing a descriptive identifier.
-Do not imply capabilities that the identifier does not establish.
+## GitHub API budget
 
-Read a merged blocker's code and its production call sites before trusting the
-dependent ticket's forecast. The blocker can leave one caller unwired or already
-have completed the dependent's proof. Check both possibilities.
+Every dispatcher, agent and interactive session shares one GitHub account and its 5000 GraphQL points an hour. When they run out, every `gh` call in the pipeline fails until the hourly reset.
 
-Count constructors, narrow interfaces and test doubles before sizing a type change.
-Compare the nearest shipped change of the same kind. Separate inserted lines from
-deleted lines, and restrict the comparison to the new ticket's actual scope.
-Recalculate measurements rather than copying old ticket estimates. Use the current
-role's size limits, not thresholds in historical notes.
+- To learn a ticket's board column, read the ticket: `gh issue view <n> --json projectItems` costs about 2 points. Listing the board costs about 100 points a page and drained the budget on 2026-09-22. List it at most once a run, and only when you need every card.
+- Check the budget with `gh api graphql -f query='{rateLimit{remaining resetAt}}'`. The `gh api rate_limit` endpoint misreports this bucket.
 
-Dependency links and parent-child links are different. Check actual parentage for
-split depth. A missing parent link can hide a descendant, while several blockers
-do not make a root ticket a grandchild. Repair recorded lineage before using it as
-a gate input. Follow the current split rules after that check.
+## GitHub writes
 
-## Review routing
+Pass every issue body, PR body and comment as a file, never as inline text in a command. Under Codex, even correctly quoted inline prose can stop the approved command from being recognised: on ticket 1237, escaped apostrophes in a comment sent the command to approval review instead.
 
-Read security and routing labels from the issue, not the PR. Keep the two numbers
-separate: PR for diff and comments, issue for labels and plan identity.
+Under Claude, `gh` with `--body-file` and the GraphQL equivalents of the helper actions below are fine, and the helpers work too. The rest of this section is what Codex needs on the MacBook.
 
-The pipeline uses one GitHub identity. GitHub cannot accept that author's approval
-or change-request review on its own PR. Post the verdict as a PR comment and apply
-the issue labels required by the role. Do not retry an impossible self-review.
+### Codex approval rules on the MacBook
 
-Mechanical gates belong to the dispatcher as specified in the role prompt. Read
-executed counts and failure evidence. A one-test baseline can omit a fixture-writing
-sibling from the branch's full run. Compare the inputs and suite composition before
-attributing a failure to the change. Search existing issues before filing another.
+Juhana approved these on 2026-09-11. New Codex processes load the rules, so start a fresh process after a rules change.
 
-## Source and evidence checks
-
-### Visual review
-
-Builders and verifiers use [the shared visual-review recipe](visual-review.md).
-Use a static component screenshot for isolated presentations and the existing
-fake-transport Electron fixture for integrated screens. Read the recipe before
-selecting a capture tool. Keep preview fixtures and images in role scratch space.
-
-### Electron tests on macOS
-
-Request approved execution outside the Codex sandbox before the first Electron
-test launch. This applies to builders and verifiers, focused Playwright specs,
-full suites, baseline comparisons and real-daemon tests. Unit tests and builds
-can remain sandboxed. A sandbox launch rejection is an environment failure.
-Do not count it as a product test failure or repeat it across the suite.
-Never unset CODEX_SANDBOX or change Electron security settings to bypass the check.
-
-On this MacBook, invoke the approved test helper as a separate command:
-`/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-test WORKTREE [SPEC]`.
-It runs the built app's fake-transport suite, or one relative `e2e/*.spec.ts` path.
-Build first. The helper accepts only this Desktop checkout and its Git worktrees.
-Use the normal approval path for real-daemon tests and other test options.
-New Codex processes load the permission rule.
-
-Use the target's `docs/knowledge/features/development-verification.md` when sizing,
-building or reviewing code. It covers source-search limitations, validation boundaries,
-protocol tests, capture evidence and artifact survival. Read the relevant section,
-not the whole historical memory archive. Current code wins over an old observation.
-
-## GitHub comments use body files
-
-Write every issue or PR comment into a unique Markdown file under
-`/Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/`.
-Create the file with the file-editing tool. Then call the approved pipeline helper
-with `issue-comment ISSUE ABSOLUTE_BODY_PATH` or
-`pr-comment PR ABSOLUTE_BODY_PATH` as a separate command.
-
-Do not pass comment prose as an inline shell argument. Even valid shell quoting
-can prevent Codex from recognizing the approved command. On ticket 1237, escaped
-apostrophes in the comment caused the command to reach approval review instead.
-The compatibility `comment ISSUE TEXT` form of the issue helper still exists,
-but pipeline roles must use the body-file forms above.
-
-Use the recovery rule below for a previously rejected action. Changing the
-comment method alone does not clear a rejection.
-
-## Codex approval rules on the MacBook
-
-Juhana approved persistent Pyrycode Desktop reads, comment changes and any label edits
-on 2026-09-11. Write helpers enforce `pyrycode/pyrycode-desktop`. Direct read rules match command prefixes only.
-New Codex processes load them. Start a fresh process after a rules change.
-
-For direct GitHub commands, put the repository option immediately after the
-subcommand and before the issue or PR number. This order matches the rules:
+**Reads.** Direct read rules match command prefixes only, so put the repository option immediately after the subcommand and before the number:
 
 ```bash
 gh issue view --repo pyrycode/pyrycode-desktop 2271 --json title,body,labels
@@ -113,131 +35,82 @@ gh pr view --repo pyrycode/pyrycode-desktop 2339 --json title,body,files
 gh pr diff --repo pyrycode/pyrycode-desktop 2339
 ```
 
-The same order applies to issue list/status and PR list/status/checks.
-If the sandbox blocks the connection, request escalated execution for the same
-repository-scoped command. These installed allow rules cover that request.
-Do not override the repository with a second option or use shell substitutions.
+The same order applies to issue list and status, and to PR list, status and checks. If the sandbox blocks the connection, request escalated execution of the same command. Do not add a second repository option or use shell substitutions.
 
-The helper `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-issue-action` also remains
-approved. Use its absolute path with exactly three arguments:
-
-- `comment ISSUE TEXT` is a compatibility form. Pipeline roles use body-file comments as required above.
-- `add-label ISSUE LABEL` adds any label by name.
-- `remove-label ISSUE LABEL` removes any label by name.
-
-The helper fixes the repository and requires a numeric issue number.
-There is no workflow-label whitelist. Extra arguments remain invalid.
-
-Permission does not change role ownership. Builders return their structured
-refinement outcome. The dispatcher still applies completion labels.
-Other repository writes and unrelated issue edits retain their existing policy.
-Previously rejected actions follow the recovery rule below.
-
-### Remaining Codex pipeline actions
-
-Juhana approved these routine operations on 2026-09-11. On this MacBook, use
-`/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action` directly for the actions
-below. These helper forms take precedence over raw Git and GitHub examples in
-role prompts. Start a fresh Codex process to load the matching local allow rule.
-If a sandbox call cannot reach GitHub, request escalated execution of the same
-helper command. Do not wrap the helper in Python, shell substitutions or scripts.
+**Writes.** Direct GitHub write commands have no automatic approval. Use `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action` with the arguments below, as a separate command, not wrapped in Python, shell substitutions or scripts. If a sandboxed call cannot reach GitHub, request escalated execution of the same helper command.
 
 | Arguments after the helper path | Effect |
 | --- | --- |
 | `push ISSUE` | Push the current `feature/ISSUE` branch normally. Requires the Pyrycode Desktop checkout or its worktree and the verified Pyrycode Desktop origin. |
 | `issue-create TITLE BODY_FILE` | Create a Pyrycode Desktop issue. |
-| `issue-edit ISSUE TITLE BODY_FILE` | Replace the issue title and body. Preserve the current title when only changing its body. |
+| `issue-edit ISSUE TITLE BODY_FILE` | Replace the issue title and body. Pass the current title when only the body changes. |
 | `pr-create ISSUE TITLE BODY_FILE` | Open a PR from `feature/ISSUE` into `main` after pushing. |
 | `pr-edit PR TITLE BODY_FILE` | Update a PR title and body. |
-| `pr-review PR VERDICT BODY_FILE` | Post `comment`, `approve` or `request-changes`. GitHub still forbids approving your own PR. Use the role's comment verdict when sharing an identity. |
+| `pr-review PR VERDICT BODY_FILE` | Post `comment`, `approve` or `request-changes`. GitHub forbids approving your own PR, and the pipeline has one identity, so use the role's comment verdict. |
 | `issue-comment ISSUE BODY_FILE` or `pr-comment PR BODY_FILE` | Post a comment. |
 | `issue-comment-edit-last ISSUE BODY_FILE` or `pr-comment-edit-last PR BODY_FILE` | Edit your last comment. |
 | `issue-comment-delete-last ISSUE` or `pr-comment-delete-last PR` | Delete your last comment. |
-| `label-edit NAME NEW_NAME COLOR DESCRIPTION` | Edit a label. Supply all fields, preserving existing values when unchanged. Color is six hexadecimal digits. |
+| `label-edit NAME NEW_NAME COLOR DESCRIPTION` | Edit a label. Supply all fields, keeping existing values when unchanged. Color is six hexadecimal digits. |
 | `board-add ISSUE` | Add the issue to Pyrycode Desktop board 7. |
 | `board-status ISSUE STATUS` | Set its board status by exact name, such as `Backlog` or `In Development`. |
 | `board-after ISSUE AFTER_ISSUE` | Place it after another Pyrycode Desktop issue on board 7. Use `top` instead of a number for first position. |
-| `relations ISSUE` | Read parents, children and dependencies. Connection results report whether more than 100 exist. Do not treat a truncated result as complete. |
-| `add-child PARENT CHILD` | Attach a child to its parent. Both are Pyrycode Desktop issue numbers. |
+| `relations ISSUE` | Read parents, children and dependencies. Each list reports whether more than 100 exist; a truncated list is not complete. |
+| `add-child PARENT CHILD` | Attach a child to its parent. |
 | `remove-child PARENT CHILD` | Remove that parent-child link. |
 | `add-blocker ISSUE BLOCKER` | Mark the first issue as blocked by the second. |
 | `remove-blocker ISSUE BLOCKER` | Remove that dependency. |
 
-Pass titles and statuses as one quoted argument. Body files must have absolute
-paths inside `/Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/`.
-Create a unique subfolder there for each task. Only put intended GitHub content
-in this folder. Symbolic links, hard links and parent-directory traversal are
-rejected. Direct GitHub comment and label-edit commands no longer have automatic
-write approval. The helper takes no
-extra flags, repository URLs, remote names, branch names or arbitrary API queries.
-It resolves current project field and item IDs itself. Add an issue to the board
-before setting its status or position. Existing comment and label commands above
-remain available. Role ownership and the shared Git prohibitions still apply.
+Labels are added and removed with `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-issue-action add-label ISSUE LABEL` or `remove-label ISSUE LABEL`, any label by name, exactly three arguments. Its `comment ISSUE TEXT` form exists for compatibility; pipeline roles use the body-file comment actions instead.
 
-This approval covers sending ticket implementation, tests and workflow text to
-`github.com/pyrycode/pyrycode-desktop`. The helper does not merge PRs, force-push, delete
-branches, close issues or alter repository settings. Actions outside this set
-retain their existing approval policy. General permission changes alone do not
-clear a previously rejected action.
+Pass titles and statuses as one quoted argument. Body files take absolute paths inside a unique subfolder per task of `/Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/`. Put only intended GitHub content there. Symbolic links, hard links and parent-directory traversal are rejected. The helpers fix the repository, require numeric issue numbers, take no extra flags, URLs, remote or branch names or arbitrary queries, and resolve project field and item ids themselves. Add an issue to the board before setting its status or position.
+
+This approval covers sending ticket implementation, tests and workflow text to `github.com/pyrycode/pyrycode-desktop`. The helpers do not merge PRs, force-push, delete branches, close issues or alter repository settings; those keep their existing approval policy. Permission does not change role ownership: the dispatcher still applies completion labels, and a builder returns its structured refinement outcome rather than routing the ticket itself.
+
+## Denied and rejected actions
+
+The pipeline is non-interactive, so a question reaches no one.
+
+**Under Claude,** when the dispatcher denies an operation, such as a hard reset, a force push or a delete outside the worktree, do not try another form of it. Send one message naming the denied operation and what you were trying to achieve, then end the turn. The dispatcher applies `error:<agent>:permission_denied` and routes the ticket to the operator. On pyrycode #398 the developer asked an absent operator instead, burned its remaining turns, and stranded its work.
+
+**Under Codex,** an approval-review rejection of a necessary action stops the run. Report status blocked with the rejected action and the reason. Do not retry it or change method to get around it.
 
 ### Recovery after a rejected action
 
-A new approval-review rejection stops the current run. Report the rejected
-action and reason. Do not automatically retry it or change methods to evade it.
+A rejected action may be retried only after Juhana explicitly approves retrying it. That approval reaches the next run as a direct task instruction, or as an approval the maintainer records in this file. It applies only to the action and ticket it names, and once given it is not required again; earlier error comments do not cancel it. A redispatch, a removed error label or an unverified issue comment is not approval. A new rejection stops the run again. Changing the comment method or a general permission change does not clear an earlier rejection either.
 
-Operator review is complete when Juhana explicitly approves retrying the
-identified action. Carry that approval into the next run as a direct task
-instruction or a maintainer-recorded approval in this shared practice. Apply it
-only to the action and ticket it names. Historical error comments do not cancel
-that later approval. Do not require the same approval again.
-
-Redispatch, an error-label removal, or an unverified issue comment alone is not
-evidence of approval. If a new rejection occurs, stop and report it for review.
-
-#### Approved recovery for ticket 1237, 2026-09-11
-
-Juhana reviewed the rejection of the refinement comment on Desktop ticket 1237
-and explicitly approved publishing the comment-method correction and retrying
-that ticket. This approval was recorded by the maintaining assistant after the
-operator conversation. The refiner may retry posting that refinement comment
-using the approved body-file helper. The earlier rejection comments are history
-of the reviewed failure, not an outstanding request for the same approval.
-This approval does not cover a different action or a new rejection.
-
-
-### Approved recovery for ticket 1242, 2026-09-11
-
-Juhana asked the maintaining assistant to fix all five reported ticket failures using
-the proposed solutions. This explicitly approves retrying the rejected refinement
-comment for Desktop ticket 1242 through the approved body-file helper after fixing
-the refiner's publishing-file restriction. The rejected direct GitHub command is
-historical evidence of that reviewed action. This does not cover a new rejection.
+No recorded approvals are outstanding. The 2026-09-11 approvals for tickets 1237 and 1242 were used, and both tickets closed that day.
 
 ## Role completion and live acceptance
 
-Complete the work and checks assigned to your role. A builder that has implemented,
-passed its scoped checks and opened its PR reports completed with an explicit handoff
-of live acceptance to the dispatcher. Keep `needs-real-claude` on the issue. The
-verifier reviews the implementation and preserves that gate requirement. Pending
-live acceptance alone is not an agent error and is never evidence that the tests passed.
+Complete the work and checks your role owns, and hand later stages theirs explicitly. Pending work owned by a later stage, including the dispatcher's live gate, is not an error, and it is never evidence that something passed. Permission rejections and unfinished work owned by your own role still block.
 
-On the MacBook the Desktop dispatcher has an automatic real-Claude gate configured.
-Its startup loads the existing Claude credential through 1Password. The gate retains
-that credential; Codex agents deliberately do not inherit it. Do not copy credentials
-into agent environments or ask an agent to obtain them to duplicate this gate.
-The dispatcher must record actual executed tests before accepting live validation.
-Missing credentials in the gate itself remain a blocking environment failure.
-Permission rejections and unfinished work owned by the current role still block.
+A builder that has implemented, passed its scoped checks and opened its PR reports completed and hands live acceptance to the dispatcher, keeping `needs-real-claude` on the issue. The verifier preserves that requirement.
 
+The MacBook dispatcher runs the real-Claude gate automatically, with the Claude credential its startup loads through 1Password. Codex agents deliberately do not inherit that credential. Do not copy credentials into agent environments, or fetch them to duplicate the gate. The gate must record the tests that actually executed before it accepts live validation, and a missing credential in the gate itself is a blocking environment failure.
+
+## For roles that size or plan work: refiner and builder
+
+- Before carrying a new descriptive identifier through the code, ask what the user can do differently with it. Do not let a name imply a capability the code does not establish.
+- Before trusting a dependent ticket's forecast, read the merged blocker's code and its production call sites. The blocker may have left a caller unwired, or may already have delivered the dependent's proof.
+- Before sizing a type change, count its constructors, narrow interfaces and test doubles. Compare the nearest shipped change of the same kind, separating inserted from deleted lines and restricting the comparison to the new ticket's scope. Recalculate rather than copying old estimates, and use the current size table, not thresholds in historical notes.
+- Parent-child links and blocker links are different. Split depth reads actual parentage: a missing parent link can hide a descendant, and several blockers do not make a root ticket a grandchild. Repair recorded lineage before using it as a gate input.
+
+## For roles that run or review code: builder and verifier
+
+**Labels and numbers.** Read security and routing labels from the issue, not the PR. The PR number is for the diff and comments; the issue number is for labels and the plan.
+
+**Failures.** Mechanical gates belong to the dispatcher, as the role file describes. Read executed counts and failure evidence, not just exit codes. A one-test baseline can leave out a fixture-writing sibling that the branch's full run includes, so compare inputs and suite composition before attributing a failure to the change. Search existing issues before filing another.
+
+**Visual review.** Use [the shared visual-review recipe](visual-review.md): a static component screenshot for an isolated presentation, the existing fake-transport Electron fixture for an integrated screen. Read it before choosing a capture tool. Keep preview fixtures and images in your scratch space.
+
+### Electron tests on macOS
+
+Under Codex, request approved execution outside the sandbox before the first Electron launch. This covers focused Playwright specs, full suites, baseline comparisons and real-daemon tests. Unit tests and builds can stay sandboxed. A sandbox launch rejection is an environment failure: do not count it as a product test failure or repeat it across the suite. Never unset `CODEX_SANDBOX` or change Electron security settings to get past the check.
+
+On this MacBook, the approved test helper runs as a separate command:
+`/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-test WORKTREE [SPEC]`.
+Build first. It runs the built app's fake-transport suite, or one relative `e2e/*.spec.ts` path, and accepts only this Desktop checkout and its worktrees. Real-daemon tests and other test options use the normal approval path.
 
 ### Daemon binary used by live tests
 
-Set `PYRY_BIN` to the dedicated test daemon under
-`/Users/juhanailmoniemi/.local/share/pyrycode-desktop-tests/pyry` on this MacBook.
-The maintainer builds it from a clean daemon revision containing the ticket's
-prerequisites. Do not assume a closed daemon ticket means the executable on PATH
-contains its change. Ticket 1252's first credentialed run used a September 8 binary
-that predated its September 10 prerequisite and failed the model-change assertion.
-When a new prerequisite requires a newer daemon, rebuild the test binary and record
-the source revision before rerunning the gate. This does not replace the daemon
-used by the running application.
+Set `PYRY_BIN` to the dedicated test daemon at `/Users/juhanailmoniemi/.local/share/pyrycode-desktop-tests/pyry`. The maintainer builds it from a clean daemon revision containing the ticket's prerequisites. A closed daemon ticket does not mean the executable on PATH contains its change: ticket 1252's first credentialed run used a September 8 binary that predated its September 10 prerequisite and failed the model-change assertion. When a prerequisite needs a newer daemon, rebuild the test binary and record its source revision before rerunning the gate. This does not replace the daemon the running application uses.

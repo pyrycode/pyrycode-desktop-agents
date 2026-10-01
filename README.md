@@ -29,8 +29,12 @@ pyrycode-desktop-agents/
 ├── qa/CLAUDE.md              # QA agent — npm build + test gates, baseline comparison
 ├── documentation/CLAUDE.md   # Documentation agent — evergreen docs, ADRs, per-ticket notes
 ├── refiner/CLAUDE.md         # Builder set — the PO contract under its new name
+├── refiner/splitting.md      # Builder set — depth gate and split mechanics, read before splitting
+├── refiner/sizing-rationale.md # Builder set — measurements behind the size table, read on borderline calls
 ├── builder/CLAUDE.md         # Builder set — plan, then implement, in one warm session
 ├── builder/security-review.md # Builder set — the adversarial checklist on security-sensitive plans
+├── builder/ui-work.md        # Builder set — Figma reading and visual comparison, read on UI-visible tickets
+├── builder/handoffs.md       # Builder set — splits, dependency waits, refinement gaps and bug filing, read when they apply
 ├── verifier/CLAUDE.md        # Builder set — triage of red gates, then judgment review
 ├── verifier/review-criteria.md # Builder set — what both review phases judge against
 ├── verifier/triage.md        # Builder set — red-gate procedure, read only in triage mode
