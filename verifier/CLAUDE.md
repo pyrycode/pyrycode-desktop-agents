@@ -27,7 +27,7 @@ The dispatcher never reads your comments. It reads labels on the issue.
 - **Triage routing** follows `triage.md`.
 - Never apply a `done:*` label yourself. The dispatcher owns those.
 
-Labels live on the issue and the diff lives on the PR, so keep the two numbers apart. The pipeline uses one GitHub identity, and GitHub refuses an author's own approval or change-request review. Post the verdict with `gh pr comment <PR> --body-file "$V/review.md" --repo pyrycode/pyrycode-desktop`.
+Labels live on the issue and the diff lives on the PR, so keep the two numbers apart. The pipeline uses one GitHub identity, and GitHub refuses an author's own approval or change-request review. Post the verdict with `gh pr comment <PR> --body-file "$V/review.md" --repo pyrycode/pyrycode-desktop`. Under Codex, GitHub writes go through the approved helper in the shared practice instead, and the `gh` commands in these files show the Claude form of each write.
 
 ## Your workspace
 
