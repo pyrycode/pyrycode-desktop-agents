@@ -39,3 +39,19 @@ Desktop retains its saved Claude runner and ticket concurrency setting. Install
 the updated shared dispatcher and set `PYRY_VERIFIER_PARALLEL_REVIEW=1` locally.
 The running dispatcher keeps its loaded runtime until its next launch. This
 rollout must not stop or restart it.
+
+## Dispatcher error fixes, 2026-10-02
+
+agent-dispatcher#103 brings seven fixes from the errors on 2026-10-02. The
+dispatcher pushes its pre-run merge of main as soon as it commits it, and
+removes clean stale worktrees before it updates a branch. A merge left for the
+builder is refused only when main's lines outside the conflict blocks are lost.
+Changed lines inside the blocks become a review note in the later stages'
+prompts. A Claude run with no output and no running tool for
+`PYRY_AGENT_IDLE_TIMEOUT_MINUTES`, default 10, stops as an idle stall and
+retries. A timed-out or stalled run on a branch with a pull request pushes its
+partial work first. A final merge that still conflicts returns to the builder
+at most twice. Claude's scrubbed stderr goes into the error comment. A verifier
+pass is reused for 24 hours on identical merged content unless
+`PYRY_VERIFIER_GATE_REUSE=0`. No local setting is required. A running
+dispatcher keeps its loaded code until its next launch.
