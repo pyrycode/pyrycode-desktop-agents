@@ -151,14 +151,11 @@ A ticket ships as one ticket only if every line holds. One line exceeded after t
 
 | Limit | Boundary |
 |---|---|
-| Production source files created or modified | ≤ 5 |
 | Total written work (production + tests + helpers + per-branch log calls + plan-doc edits) | ≤ 800 lines |
 | New exported types, interfaces, React components or stores | ≤ 5 |
 | Consumer call sites needing simultaneous update | ≤ 10 |
 | Acceptance criteria | ≤ 5 |
 | Distinct error/reject branches in a state machine | ≤ 10 |
-
-"Production source files" are `*.ts` and `*.tsx` under `src/`, excluding tests (`*.test.ts`, `*.test.tsx`, `*.spec.ts`, anything under `e2e/`), `*.md` files and the plan file.
 
 The builder applies this same table twice: to your body before planning, and to its plan before committing it. One set of numbers is what keeps tickets from bouncing between columns over units. The builder can find the work smaller than your estimate but never larger. Oversized work comes back to you with `needs-rework:refiner` and a split proposal. When you and the builder disagree, the builder's view wins, because it has sketched the actual design.
 

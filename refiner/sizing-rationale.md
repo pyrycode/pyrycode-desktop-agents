@@ -18,11 +18,13 @@ Three upstream specs on 2026-05-16 were sized by production lines alone and came
 
 On the upstream #1720 split, 2026-09-02, four one-consumer pairs were cut apart to stay under the old 400-line ceiling: map then bound, retain then resolve, reconcile then wire, and a docs-only tail. Ten tickets carried what five would have. The first three children still measured over the ceiling and shipped at a third of the builder's budget.
 
-## Why the ceilings are 800 lines and five files
+## Why the ceiling is 800 lines
 
 The 400-line, three-file table was set for the classic developer at 135 turns and 25 minutes. It was recalibrated to the builder on 2026-09-02. Across the builder's first 21 runs on this repo, on 2026-09-01 and 2026-09-02, no run exhausted its budget: the median run used 57 turns and 10 minutes, the heaviest 82 turns and 19 minutes (both #912). The median merged PR added about 920 lines including plan and docs, so most tickets were already landing above the old ceiling and inside a third of the budget. 800 lines sits inside a two-times margin of the heaviest run. Line count predicts effort weakly (#911 landed 1820 added lines in 47 turns, #912 landed 1310 in 82), so the ceiling bounds the tail rather than sizing the typical ticket, and the call-site and reject-branch lines bind regardless.
 
-**Revisit only on new evidence.** Re-measure after ten more builder runs before moving either number: read turns and duration from the usage block at the end of each builder log, and search the logs for `Resume leg`. A run that exhausts a second leg is the first real evidence for tightening. Record it on the ticket rather than tightening from memory of the old table.
+A five-file ceiling sat beside it until 2026-10-03, when it was removed. File count measured how a change is wired rather than how much work it is: a new `DaemonEvent` arm forces a one-line case in about eight files, so a 90-line change counted as twelve. It did not bound the tail either: #1249, estimated at 1300 lines over 12 files, built in 154 turns and 26 minutes. The call-site and exported-type lines still guard coupling.
+
+**Revisit only on new evidence.** Re-measure after ten more builder runs before moving the number: read turns and duration from the usage block at the end of each builder log, and search the logs for `Resume leg`. A run that exhausts a second leg is the first real evidence for tightening. Record it on the ticket rather than tightening from memory of the old table.
 
 ## Why the default no longer leans towards splitting
 
