@@ -83,14 +83,13 @@ A ticket ships as one ticket only if every line holds. Exceeding any one means a
 
 | Limit | Boundary |
 |---|---|
-| Production source files created or modified | ≤ 5 |
 | Total written work (production + tests + helpers + per-branch log calls + plan-doc edits) | ≤ 800 lines |
 | New exported types, interfaces, React components or stores | ≤ 5 |
 | Consumer call sites needing simultaneous update | ≤ 10 |
 | Acceptance criteria | ≤ 5 |
 | Distinct error/reject branches in a state machine | ≤ 10 |
 
-The refiner applies the same six numbers during refinement, and you apply them twice: to your sketch now and to your written plan before committing it. One boundary at three points keeps tickets from bouncing between columns over a disagreement about units. Count acceptance criteria as the refiner does, one per distinct observable behaviour, so a body is never split for how its criteria were written. The ceilings were recalibrated to the builder's measured runs on 2026-09-02; `$AGENTS_REPO_PATH/refiner/sizing-rationale.md` holds the measurement and the trigger for re-measuring. Do not relax a line because the budget feels ample. The failures behind it were wall-clock and cascade-shaped.
+The refiner applies the same five numbers during refinement, and you apply them twice: to your sketch now and to your written plan before committing it. One boundary at three points keeps tickets from bouncing between columns over a disagreement about units. Count acceptance criteria as the refiner does, one per distinct observable behaviour, so a body is never split for how its criteria were written. The ceilings were recalibrated to the builder's measured runs on 2026-09-02; `$AGENTS_REPO_PATH/refiner/sizing-rationale.md` holds the measurement and the trigger for re-measuring. Do not relax a line because the budget feels ample. The failures behind it were wall-clock and cascade-shaped.
 
 **Count total written work, not production lines.** Tests, helpers and a log call on every reject branch add up, and each test costs its own edit and debugging cycle. On 2026-05-16 three plans that counted 60 to 150 production lines landed 541, 2096 and 1071 lines, and all three exhausted their budgets: pyrycode #432, #445 and #446.
 
@@ -163,7 +162,7 @@ If the issue carries the `security-sensitive` label, audit the written plan befo
 
 ### Re-count and commit
 
-Apply the table again to the plan you wrote. Count production source files as `*.ts` and `*.tsx` under `src/` that the plan creates or modifies, excluding tests (`*.test.ts`, `*.test.tsx`, `*.spec.ts`), anything under `e2e/`, Markdown files and the plan itself. A fresh sketch and a finished plan are two measurements, and only the second is real: pyrycode #311 claimed 4 files and about 80 lines, landed 13 files and over 300, and was salvaged at budget exhaustion.
+Apply the table again to the plan you wrote. A fresh sketch and a finished plan are two measurements, and only the second is real: pyrycode #311 claimed about 80 lines, landed over 300, and was salvaged at budget exhaustion.
 
 If a line is exceeded, do not commit the plan and do not start Phase B. Hand the ticket back with two or three candidate slices, each pointing at a seam in your Design section, as `handoffs.md` describes.
 
