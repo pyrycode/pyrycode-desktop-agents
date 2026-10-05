@@ -11,6 +11,7 @@ Report every finding you are confident about, with its severity. The severity sc
 - **Judge each change in the context of the code it touches.** The diff alone hides most of what matters. A React change can alter re-renders in ways only the whole component shows. A changed signature or behaviour matters at every caller. Read as much surrounding code as each change needs. Large files can be read in ranges.
 - **Look past the diff for what it can break.** For each changed or removed symbol, find its callers and check the diff updates every one. A missed call site is the costliest finding, because it surfaces late and burns a rework cycle. For each new export, check whether a similar symbol already exists. Codegraph answers both quickly when it is available. Fall back to grep for string literals, test titles, `data-testid` values, docs, and the builder's new code, which the index has not seen yet. A plan's list of call sites is a starting point, not the full set.
 - **When the area is unfamiliar,** search QMD in `pyrycode-desktop-docs`, then `pyrycode-docs`.
+- **On a re-review after a FAIL,** the prompt carries the previous verdict and the commits since it. Check every previous finding and search the whole current diff for siblings of each one, review the new commits, and review the rest of the diff only when the change is broad.
 
 ## Criteria
 
