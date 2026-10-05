@@ -15,7 +15,7 @@ A successful run leaves all of this on GitHub:
 
 - The plan at `docs/specs/architecture/<ticket>-<slug>.md`, committed before any implementation code.
 - The implementation and its tests, committed on `feature/<ticket>` and pushed.
-- Your touched-scope tests and `npm run build` green.
+- The pre-verify check and `npm run build` green after your final merge of `main`, and every live test you wrote or changed run and passing.
 - An open pull request whose body follows § Pull request.
 
 The dispatcher then applies `done:builder` and moves the ticket to In Code Review. A clean run that leaves no open PR and no `needs-rework:*` label is recorded as an error, even when the branch was pushed. On pyrycode #2569 a builder ended its turn saying it would push once a test run finished, and the ticket reached Done with nothing merged. So do not end your turn waiting on a background job.
@@ -30,7 +30,7 @@ Make every change as simple as it can be, and touch only what the ticket needs. 
 
 The dispatcher sets a wall-clock budget, 40 minutes unless the operator changes it. On Claude there is also a turn cap. A Claude run that exhausts its budget may get one continuation leg, and Codex gets none, so do not rely on one. Plan to finish, commit and open the PR with time to spare.
 
-If time runs short, commit and push what stands. A coherent partial state on the remote beats a polished tree that never leaves the machine, because cleanup removes the worktree and anything not pushed with it. Pyrycode #27 lost a finished spec that way. The usual way to lose a finished run is spending the last minutes on a full test sweep that the verifier's gate runs anyway, as pyrycode #1066 did.
+If time runs short, commit and push what stands. A coherent partial state on the remote beats a polished tree that never leaves the machine, because cleanup removes the worktree and anything not pushed with it. Pyrycode #27 lost a finished spec that way. The usual way to lose a finished run is starting the closing checks too late, or spending the last minutes on a full Playwright sweep that the verifier's gate runs anyway, as pyrycode #1066 did. Leave room for § Check your own change: on this repository the unit suite takes about two minutes.
 
 ## Files you write
 
@@ -158,7 +158,7 @@ Write the design to `docs/specs/architecture/<ticket>-<slug>.md`. You are its fi
 
 ### Security review
 
-If the issue carries the `security-sensitive` label, audit the written plan before committing it, following `$AGENTS_REPO_PATH/builder/security-review.md`. That file is in the agents repo, not your worktree. The pass appends `## Security review` to the plan, and the verifier fails a labelled ticket whose plan has none, so the label decides whether the pass runs, not your view of the ticket's size or risk. If the path is unset or the file is missing, that is a dispatch fault: stop as you would for a denied operation rather than skip the pass.
+If the issue carries the `security-sensitive` label, or its body has the refiner's **Security-sensitive** line, audit the written plan before committing it, following `$AGENTS_REPO_PATH/builder/security-review.md`. Read the labels from the issue itself just before you commit the plan, because the refiner can add one moments before you start: desktop #1726 was labelled 33 seconds before its builder began, and its plan shipped with no review. That file is in the agents repo, not your worktree. The pass appends `## Security review` to the plan, and the verifier fails a labelled ticket whose plan has none, so the label decides whether the pass runs, not your view of the ticket's size or risk. If the path is unset or the file is missing, that is a dispatch fault: stop as you would for a denied operation rather than skip the pass.
 
 ### Re-count and commit
 
@@ -196,25 +196,33 @@ If the plan turns out wrong mid-build, such as an interface that does not fit or
 
 ### Check your own change
 
-Your checks prove your change, and the dispatcher's gate proves the rest:
+Check after your final merge of `main`, because that tree is what the verifier tests. Merge `origin/main` into your branch once more, then run the pre-verify check from the worktree root, then the build:
 
 ```bash
-npm test -- <files-you-touched>
+git fetch origin && git merge origin/main
+npm install --no-audit --no-fund
+python3 "$AGENTS_REPO_PATH/bin/pre-verify-check"
 npm run build          # typecheck both sides, then build main, preload and renderer
 ```
 
-Add the one Playwright spec you wrote, if any. Do not run the full `npm test` suite or the full Playwright tier. The dispatcher runs `npm test`, `npm run build` and the whole fake-transport tier after your PR opens and routes a red back to you already triaged, so running them yourself duplicates the gate and risks the wall clock, as on pyrycode #1066. `npm run build` stays in your checks because it is the salvage gate and the only typecheck of the side you wrote no tests for.
+The check confirms `main` is merged, confirms the plan has its `## Security review` when the issue carries `security-sensitive`, looks for Playwright specs that still expect a string or test id your change removed, then runs the typecheck and the full unit suite. It is the dispatcher's first verifier gate too, so a red here is a red there. Each failure names its reason; fix every one before you open the PR. On Codex, if the sandbox blocks the suite or the label read, request escalated execution of the same command. A label read that still fails only skips the security check, and the verifier checks the label anyway.
 
-The full real-Claude tier belongs to the dispatcher. After a repair whose verifier finding names a live test, build the app and run only that test:
+**Grep the browser tests for what you remove.** Before you remove or rename a visible string, an accessible name, a test id or a class name, search `e2e/` for it with `grep -rn '<string>' e2e/`. Do the same for every string a function renders when you remove its last caller. The check catches the common shapes, not all of them. Desktop #1695 removed the only caller of the function that produced the host-dot labels, and eleven browser tests still looked for them.
+
+Add the one fake-transport Playwright spec you wrote, if any. Do not run the full Playwright tier: the dispatcher runs it after your PR opens and routes a red back to you already triaged. `npm run build` stays in your checks because it is the salvage gate and the only build of the renderer.
+
+**Run every live test you write or change.** A live test is a spec matching `e2e/real-*.spec.ts`. Desktop #1690, #1658 and #1723 shipped live tests that never ran. Build the app, then run each changed spec, selecting the tests you wrote or changed by title:
 
 ```bash
 npm run build
-python3 "$AGENTS_REPO_PATH/dispatcher/scripts/live-claude-gate.py" desktop --spec e2e/real-name.spec.ts --tests "the named test title"
+python3 "$AGENTS_REPO_PATH/dispatcher/scripts/live-claude-gate.py" desktop --spec e2e/real-name.spec.ts --tests "the test title"
 ```
 
-The launcher fetches the Claude login through the restricted Dev Agents account for its own child process. Never fetch or copy credentials yourself. Paste the selected test, executed and passed counts into the PR and final handoff. Zero executed is not a pass. A missing login item is an environment blocker. Never print secrets or the environment.
+Do the same after a repair whose verifier finding names a live test. The full real-Claude tier still belongs to the dispatcher, so never select the whole suite.
 
- If the ticket needs it, write the live spec it requires, keep `needs-real-claude` on the issue, and name the pending live check in the PR's Testing section. Pending live acceptance is a handoff, not an error and not a pass.
+The launcher fetches the Claude login through the restricted Dev Agents account for its own child process. Never fetch or copy credentials yourself. Paste the selected tests, executed and passed counts into the PR's Testing section and the final handoff. Zero executed is not a pass, and a failing live test is fixed like any other failing test. A missing login item is an environment blocker: stop as blocked and name it, as § Labels and handoffs describes, rather than open a PR whose live test never ran. Never print secrets or the environment.
+
+Keep `needs-real-claude` on the issue when the ticket has it. Your targeted run proves the test you wrote works; the dispatcher's live gate after the verifier still proves the whole tier.
 
 ### Pull request
 
@@ -227,7 +235,7 @@ One paragraph: what changed and why.
 Closes #<ticket>
 
 ## Testing
-One line, for example: npm test on touched files and npm run build pass; the verifier's gate runs the full suites.
+One line, for example: pre-verify check and npm run build pass after the final merge of main; live: e2e/real-send-now.spec.ts "sends now", 1 executed, 1 passed.
 
 ## Visual evidence
 UI-visible work only: viewport sizes, image paths and any deviation from the design left unresolved.

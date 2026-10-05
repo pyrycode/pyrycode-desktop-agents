@@ -1,0 +1,633 @@
+#!/usr/bin/env python3
+"""Pre-verifier check for a Desktop ticket worktree.
+
+Run from the ticket's worktree, after main is merged in. Builders run it in
+full before they open or update a pull request. The dispatcher runs it with
+--no-suite as the first PYRY_VERIFIER_GATES command, because its later gates
+run the unit suite and the build. Five checks, every one reported:
+
+1. main merged: no unfinished merge, and HEAD contains the base branch, so the
+   suite below tests the final merge.
+2. security review: when the issue carries `security-sensitive`, its plan at
+   docs/specs/architecture/<issue>-*.md has a `## Security review` section with
+   a verdict. Desktop #1726 got the label 33 seconds before its builder
+   started and shipped a plan with no review.
+3. removed strings: no Playwright file under e2e/ still expects a string or
+   test id this change removed from src/. Also catches strings whose only
+   producer lost its last production caller, which is how #1695 broke eleven
+   browser tests while the label text itself stayed in the code.
+4. typecheck: `npm run typecheck`.
+5. unit suite: `npm test`, the full vitest suite.
+
+Exit 0 when every check passes, 1 when any fails, 2 on a usage error. The
+summary at the end names each failure and its reason; the dispatcher shows
+only the tail of the output to the verifier.
+"""
+import argparse
+import bisect
+import collections
+import json
+import os
+import re
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+SECURITY_LABEL = "security-sensitive"
+PLAN_DIR = "docs/specs/architecture"
+SOURCE_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".css")
+TEST_FILE = re.compile(r"\.(test|spec)\.[cm]?[jt]sx?$")
+MIN_STRING_LENGTH = 4
+REPORT_LIMIT = 15
+
+# A reference that asserts absence is deliberate, not stale.
+NEGATIVE_ASSERTION = re.compile(r"\.not\b|toHaveCount\(\s*0\s*\)|toBeHidden\(|toBeDetached\(")
+NEW_STATEMENT = re.compile(r"^\s*(await\b|expect\(|const\b|let\b|var\b|return\b|test\(|it\(|\}|\);?\s*$)")
+TOP_LEVEL_DECLARATION = re.compile(
+    r"^(?:export\s+)?(?:default\s+)?(?:async\s+)?"
+    r"(?:function\s*\*?\s*([A-Za-z_$][\w$]*)|(?:const|let|var)\s+([A-Za-z_$][\w$]*))",
+    re.M,
+)
+# Only a phrase or a class-like token is looked for inside a longer string. A
+# single bare word such as 'Chats' must match a whole literal.
+PHRASE_OR_TOKEN = re.compile(r"[\s_-]")
+# A test or suite title names a case; it asserts nothing about the screen.
+TEST_TITLE = re.compile(r"\b(?:test|it|describe)(?:\.\w+)*\(\s*$")
+IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]*")
+CLASS_TOKENS = re.compile(r"^[A-Za-z0-9_-]+(\s+[A-Za-z0-9_-]+)*$")
+JSX_TEXT = re.compile(r">([^<>{}'\"`]+)<")
+SCAN_TOKEN = re.compile(r"//|/\*|['\"`{}]")
+
+
+# ---------------------------------------------------------------- lexer
+
+class Lexed:
+    """String literals of a JS/TS/CSS text, plus two derived copies.
+
+    `literals` holds (start, end, value); a template contributes one entry per
+    static chunk. `code` is the text with comments blanked. `masked` also
+    blanks string contents, so identifiers and braces in it are real code.
+    Single and double quoted strings end at a newline, so a stray apostrophe in
+    JSX text damages one line at most. Regex literals are not recognised.
+    """
+
+    def __init__(self, text):
+        self.text = text
+        self.literals = []
+        self.fragments = set()  # starts of chunks from templates with ${} holes
+        self.patterns = []  # one regex per template with holes, holes as .+
+        self._comments = []
+        self._strings = []
+        self._scan(0, inside_template_expression=False)
+        self.literals.sort()
+        self.code = self._blank(text, self._comments)
+        self.masked = self._blank(self.code, self._strings)
+
+    @staticmethod
+    def _blank(text, spans):
+        if not spans:
+            return text
+        parts, last = [], 0
+        for start, end in sorted(spans):
+            if start < last:
+                continue
+            parts.append(text[last:start])
+            parts.append(re.sub(r"[^\n]", " ", text[start:end]))
+            last = end
+        parts.append(text[last:])
+        return "".join(parts)
+
+    def _scan(self, pos, inside_template_expression):
+        text, depth = self.text, 0
+        while True:
+            match = SCAN_TOKEN.search(text, pos)
+            if match is None:
+                return len(text)
+            token, at = match.group(), match.start()
+            if token == "//":
+                end = text.find("\n", at)
+                end = len(text) if end == -1 else end
+                self._comments.append((at, end))
+                pos = end
+            elif token == "/*":
+                end = text.find("*/", at + 2)
+                end = len(text) if end == -1 else end + 2
+                self._comments.append((at, end))
+                pos = end
+            elif token in ("'", '"'):
+                end = self._quoted_end(at, token)
+                if end is None:
+                    pos = at + 1
+                else:
+                    self.literals.append((at, end, _unescape(text[at + 1:end - 1])))
+                    self._strings.append((at + 1, end - 1))
+                    pos = end
+            elif token == "`":
+                pos = self._template(at)
+            elif token == "{":
+                depth += 1
+                pos = at + 1
+            else:
+                if inside_template_expression and depth == 0:
+                    return at + 1
+                depth = max(depth - 1, 0)
+                pos = at + 1
+
+    def _quoted_end(self, at, quote):
+        text, i = self.text, at + 1
+        while i < len(text):
+            char = text[i]
+            if char == "\\":
+                i += 2
+                continue
+            if char == quote:
+                return i + 1
+            if char == "\n":
+                return None
+            i += 1
+        return None
+
+    def _template(self, at):
+        text, i, chunk_start = self.text, at + 1, at + 1
+        chunks, holes = [], 0
+        while i < len(text):
+            char = text[i]
+            if char == "\\":
+                i += 2
+                continue
+            if char == "`" or text.startswith("${", i):
+                chunks.append((chunk_start, i))
+                if char == "`":
+                    self._record_template(chunks, holes)
+                    return i + 1
+                holes += 1
+                i = self._scan(i + 2, inside_template_expression=True)
+                chunk_start = i
+                continue
+            i += 1
+        self._record_template(chunks, holes)
+        return len(text)
+
+    def _record_template(self, chunks, holes):
+        values = [_unescape(self.text[start:end]) for start, end in chunks]
+        for (start, end), value in zip(chunks, values):
+            if end > start:
+                self.literals.append((start, end, value))
+                self._strings.append((start, end))
+                if holes:
+                    self.fragments.add(start)
+        if holes:
+            self.patterns.append(re.compile(".+".join(re.escape(v) for v in values), re.S))
+
+
+def _unescape(value):
+    return re.sub(r"\\(.)", r"\1", value)
+
+
+def line_finder(text):
+    """A function from offset to 1-based line number in text."""
+    starts = [0] + [m.end() for m in re.finditer("\n", text)]
+    return lambda offset: bisect.bisect_right(starts, offset)
+
+
+# ---------------------------------------------------------------- git
+
+def git(root, *args, check=True):
+    result = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
+    if check and result.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+    return result
+
+
+def parse_diff(diff_text):
+    """Removed line numbers by base-side path, added line numbers by new path."""
+    removed = collections.defaultdict(set)
+    added = collections.defaultdict(set)
+    old_path = new_path = None
+    old_line = new_line = 0
+    in_header = False
+    for line in diff_text.splitlines():
+        if line.startswith("diff --git "):
+            old_path = new_path = None
+            in_header = True
+        elif in_header and line.startswith("--- "):
+            old_path = line[6:] if line.startswith("--- a/") else None
+        elif in_header and line.startswith("+++ "):
+            new_path = line[6:] if line.startswith("+++ b/") else None
+        elif line.startswith("@@"):
+            in_header = False
+            match = re.match(r"@@ -(\d+)(?:,\d+)? \+(\d+)", line)
+            old_line, new_line = (int(match.group(1)), int(match.group(2))) if match else (0, 0)
+        elif in_header:
+            continue
+        elif line.startswith("-"):
+            if old_path:
+                removed[old_path].add(old_line)
+            old_line += 1
+        elif line.startswith("+"):
+            if new_path:
+                added[new_path].add(new_line)
+            new_line += 1
+    return removed, added
+
+
+# ---------------------------------------------------------------- checks
+
+class Report:
+    def __init__(self):
+        self.results = []
+
+    def add(self, name, status, detail):
+        self.results.append((name, status, detail))
+        marker = {"ok": "ok", "fail": "FAIL", "skip": "skipped"}[status]
+        first = detail.splitlines()[0] if detail else ""
+        print(f"[pre-verify] {name}: {marker}" + (f": {first}" if first else ""), flush=True)
+
+    @property
+    def failed(self):
+        return [r for r in self.results if r[1] == "fail"]
+
+
+def check_merge(root, base, report):
+    unmerged = git(root, "diff", "--name-only", "--diff-filter=U").stdout.split()
+    merge_head = git(root, "rev-parse", "-q", "--verify", "MERGE_HEAD", check=False).returncode == 0
+    if unmerged or merge_head:
+        files = ", ".join(unmerged[:5]) or "no conflicted files listed"
+        report.add("main merged", "fail", f"an unfinished merge is in the worktree ({files}). Finish the merge of {base} and commit it.")
+        return
+    base_sha = git(root, "rev-parse", "--verify", f"{base}^{{commit}}").stdout.strip()
+    if git(root, "merge-base", "--is-ancestor", base_sha, "HEAD", check=False).returncode != 0:
+        report.add("main merged", "fail", f"HEAD does not contain {base} ({base_sha[:12]}). Merge it, so the checks test the final merge.")
+        return
+    report.add("main merged", "ok", f"HEAD contains {base} ({base_sha[:12]})")
+
+
+def repo_slug(root):
+    url = git(root, "remote", "get-url", "origin", check=False).stdout.strip()
+    match = re.search(r"github\.com[:/]+([^/]+/[^/]+?)(?:\.git)?/?$", url)
+    return match.group(1) if match else None
+
+
+def fetch_labels(slug, issue):
+    """Issue labels from the GitHub API, or (None, reason) when unreadable.
+
+    The gate's environment has no GitHub token, because the dispatcher strips
+    its own. The Desktop repository is public, so an anonymous read works; a
+    token in GH_TOKEN or GITHUB_TOKEN is used when one is present.
+    """
+    api = os.environ.get("PYRY_PRE_VERIFY_API", "https://api.github.com").rstrip("/")
+    request = urllib.request.Request(f"{api}/repos/{slug}/issues/{issue}")
+    request.add_header("Accept", "application/vnd.github+json")
+    request.add_header("User-Agent", "pyrycode-pre-verify-check")
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            data = json.load(response)
+    except (urllib.error.URLError, OSError, ValueError) as error:
+        return None, f"could not read the labels of #{issue} ({getattr(error, 'reason', error)})"
+    return [label.get("name", "") for label in data.get("labels", [])], None
+
+
+def security_section(plan_text):
+    """The `## Security review` section's body, or None when absent."""
+    match = re.search(r"^##[ \t]+Security review[^\n]*\n", plan_text, re.M | re.I)
+    if match is None:
+        return None
+    rest = plan_text[match.end():]
+    following = re.search(r"^##[ \t]", rest, re.M)
+    return rest[:following.start()] if following else rest
+
+
+def check_security(root, issue, labels, report):
+    if issue is None:
+        report.add("security review", "skip", "no issue number; the branch is not feature/<N> and --issue was not given")
+        return
+    if SECURITY_LABEL not in labels:
+        report.add("security review", "ok", f"#{issue} is not labelled {SECURITY_LABEL}")
+        return
+    plans = sorted((root / PLAN_DIR).glob(f"{issue}-*.md"))
+    if not plans:
+        report.add("security review", "fail", f"#{issue} carries {SECURITY_LABEL}, but no plan exists at {PLAN_DIR}/{issue}-*.md.")
+        return
+    for plan in plans:
+        body = security_section(plan.read_text(errors="replace"))
+        if body is not None and re.search(r"verdict", body, re.I):
+            report.add("security review", "ok", f"{plan.relative_to(root)} has a ## Security review with a verdict")
+            return
+    names = ", ".join(str(p.relative_to(root)) for p in plans)
+    report.add(
+        "security review", "fail",
+        f"#{issue} carries {SECURITY_LABEL}, but {names} has no '## Security review' section with a verdict. "
+        "Run $AGENTS_REPO_PATH/builder/security-review.md on the plan, commit the section with a Revisions entry, "
+        "then implement its MUST FIX findings.",
+    )
+
+
+def is_production(path):
+    return path.startswith("src/") and path.endswith(SOURCE_EXTENSIONS) and not TEST_FILE.search(path)
+
+
+def is_browser_test(path):
+    return path.startswith("e2e/") and path.endswith((".ts", ".tsx", ".js", ".mjs"))
+
+
+def candidate_strings(value, fragment=False):
+    """The strings worth tracing from one removed literal or JSX text.
+
+    A fragment, the static part of a template with ${} holes, yields only
+    class-like tokens: its prose is never shown on its own.
+    """
+    value = value.strip()
+    if fragment and not (CLASS_TOKENS.match(value) and re.search(r"-|__", value)):
+        return []
+    if "\n" in value or len(value) < MIN_STRING_LENGTH or not re.search(r"[A-Za-z]", value):
+        return []
+    if value.startswith(("./", "../", "@/", "node:", "http://", "https://")):
+        return []
+    tokens = value.split()
+    if len(tokens) > 1 and CLASS_TOKENS.match(value) and any("-" in t or "__" in t for t in tokens):
+        return [t for t in tokens if len(t) >= MIN_STRING_LENGTH and not t.endswith(("-", "_"))]
+    if value.endswith(("-", "_")):
+        return []
+    return [value]
+
+
+def _bounded_hits(haystack, needle):
+    """Offsets where needle appears as a whole token or phrase, not inside a longer word."""
+    at = haystack.find(needle)
+    while at != -1:
+        before = haystack[at - 1] if at > 0 else " "
+        after = haystack[at + len(needle)] if at + len(needle) < len(haystack) else " "
+        if not (before.isalnum() or before in "_-") and not (after.isalnum() or after in "_-"):
+            yield at
+        at = haystack.find(needle, at + 1)
+
+
+def contains(haystack, needle):
+    return next(_bounded_hits(haystack, needle), None) is not None
+
+
+def occurrences(haystack, needle):
+    return sum(1 for _ in _bounded_hits(haystack, needle))
+
+
+def removed_line_material(path, base_text, line_numbers):
+    """Strings and identifiers on a file's removed lines.
+
+    The whole base-side file is lexed, so a removed line inside a block
+    comment or a multi-line template is read in its real context.
+    """
+    lexed = Lexed(base_text)
+    code_lines = lexed.code.split("\n")
+    masked_lines = lexed.masked.split("\n")
+    imports = {n for n in line_numbers if n - 1 < len(masked_lines)
+               and re.match(r"\s*(import\b|export\b.*\bfrom\b|\}\s*from\b)", masked_lines[n - 1])}
+    strings, identifiers = set(), set()
+    line_of = line_finder(base_text)
+    for start, _, value in lexed.literals:
+        line = line_of(start)
+        if line in line_numbers and line not in imports:
+            strings.update(candidate_strings(value, start in lexed.fragments))
+    for n in sorted(line_numbers):
+        if n - 1 >= len(masked_lines):
+            continue
+        identifiers.update(IDENTIFIER.findall(masked_lines[n - 1]))
+        if path.endswith((".tsx", ".jsx")):
+            for match in JSX_TEXT.finditer(code_lines[n - 1]):
+                strings.update(candidate_strings(match.group(1)))
+    return strings, identifiers
+
+
+def declaration_span(masked, start):
+    """End offset of the top-level statement that starts at `start`."""
+    depth, opened, i = 0, False, start
+    while i < len(masked):
+        char = masked[i]
+        if char in "{([":
+            depth += 1
+            opened = True
+        elif char in "})]":
+            depth -= 1
+        elif char == "\n" and depth <= 0 and not opened:
+            return i
+        if opened and depth <= 0 and char in "})]":
+            line_end = masked.find("\n", i)
+            line_end = len(masked) if line_end == -1 else line_end
+            if re.fullmatch(r"[\s;),]*", masked[i + 1:line_end]):
+                return line_end
+        i += 1
+    return len(masked)
+
+
+def orphaned_strings(production, identifiers, production_code):
+    """Strings whose only producer this change left with no production caller.
+
+    `production` maps path to Lexed. An identifier on a removed line that is
+    still declared at the top level of a production file, and now appears
+    nowhere else in production code, has lost its last caller. The strings in
+    its body that appear nowhere else in production no longer reach the screen.
+    """
+    references = collections.Counter()
+    declarations = {}
+    for path, lexed in production.items():
+        references.update(IDENTIFIER.findall(lexed.masked))
+        for match in TOP_LEVEL_DECLARATION.finditer(lexed.masked):
+            name = match.group(1) or match.group(2)
+            declarations.setdefault(name, (path, match.start()))
+    found = {}
+    for name in sorted(identifiers):
+        if name not in declarations or references[name] != 1:
+            continue
+        path, start = declarations[name]
+        lexed = production[path]
+        end = declaration_span(lexed.masked, start)
+        body = lexed.code[start:end]
+        for literal_start, _, value in lexed.literals:
+            if not start <= literal_start < end:
+                continue
+            for candidate in candidate_strings(value, literal_start in lexed.fragments):
+                if candidate not in found and occurrences(production_code, candidate) <= occurrences(body, candidate):
+                    found[candidate] = (name, path)
+    return found
+
+
+def browser_references(root, browser_files, added_lines):
+    """Every string literal in the browser tests, with its file and line."""
+    references = []
+    for path in browser_files:
+        text = (root / path).read_text(errors="replace")
+        lexed = Lexed(text)
+        lines = lexed.code.splitlines()
+        line_of = line_finder(text)
+        for start, _, value in lexed.literals:
+            line = line_of(start)
+            if line in added_lines.get(path, ()):
+                continue
+            line_start = text.rfind("\n", 0, start) + 1
+            if TEST_TITLE.search(lexed.masked[line_start:start]):
+                continue
+            window = [lines[line - 1]] if line - 1 < len(lines) else []
+            for following in lines[line:line + 3]:
+                if NEW_STATEMENT.match(following) and not following.strip().startswith(")"):
+                    break
+                window.append(following)
+            if any(NEGATIVE_ASSERTION.search(w) for w in window):
+                continue
+            references.append((path, line, value))
+    return references
+
+
+def check_removed_strings(root, base, report):
+    merge_base = git(root, "merge-base", base, "HEAD").stdout.strip()
+    diff = git(root, "diff", "--no-color", "--no-ext-diff", "--no-renames", "-U0",
+               merge_base, "HEAD", "--", "src", "e2e").stdout
+    removed, added = parse_diff(diff)
+
+    tracked = git(root, "ls-files", "--", "src", "e2e").stdout.splitlines()
+    production = {p: Lexed((root / p).read_text(errors="replace"))
+                  for p in tracked if is_production(p) and (root / p).is_file()}
+    browser_files = [p for p in tracked if is_browser_test(p) and (root / p).is_file()]
+
+    strings, identifiers = set(), set()
+    for path, line_numbers in removed.items():
+        if is_production(path):
+            base_text = git(root, "show", f"{merge_base}:{path}").stdout
+            found_strings, found_identifiers = removed_line_material(path, base_text, line_numbers)
+            strings |= found_strings
+            identifiers |= found_identifiers
+
+    production_code = "\n".join(lexed.code for lexed in production.values())
+    gone = {s: None for s in strings if not contains(production_code, s)}
+    for value, producer in orphaned_strings(production, identifiers, production_code).items():
+        gone.setdefault(value, producer)
+    # Text a template with holes can still produce is not gone: #1651 turned
+    # 'Claude reports no model effort parameter.' into `${agentName} reports ...`.
+    patterns = [pattern for lexed in production.values() for pattern in lexed.patterns]
+    gone = {value: producer for value, producer in gone.items()
+            if producer is not None or not any(pattern.fullmatch(value) for pattern in patterns)}
+
+    if not gone:
+        report.add("removed strings", "ok", "the change removes no string that a browser test could still expect")
+        return
+    hits = []
+    for path, line, literal in browser_references(root, browser_files, added):
+        for value, producer in gone.items():
+            if literal == value or (value in literal and PHRASE_OR_TOKEN.search(value) and contains(literal, value)):
+                hits.append((path, line, value, producer))
+    if not hits:
+        report.add("removed strings", "ok", f"no browser test references the {len(gone)} string(s) this change removed")
+        return
+    by_value = collections.OrderedDict()
+    for path, line, value, producer in hits:
+        by_value.setdefault((value, producer), collections.OrderedDict()).setdefault(path, []).append(line)
+    lines = []
+    for (value, producer), places in list(by_value.items())[:REPORT_LIMIT]:
+        why = (f"only producer `{producer[0]}` in {producer[1]} lost its last production caller"
+               if producer else "removed from src/")
+        where = "; ".join(f"{path}:{','.join(map(str, nums))}" for path, nums in places.items())
+        lines.append(f"    {value!r} ({why}): {where}")
+    if len(by_value) > REPORT_LIMIT:
+        lines.append(f"    ... and {len(by_value) - REPORT_LIMIT} more strings")
+    report.add(
+        "removed strings", "fail",
+        f"{len(hits)} browser test reference(s) to strings this change removed. Update each test to assert "
+        "what still renders, or keep the string:\n" + "\n".join(lines),
+    )
+
+
+def run_command(root, name, command, summary_pattern, report):
+    print(f"[pre-verify] {name}: running `{command}`", flush=True)
+    process = subprocess.Popen(command, cwd=root, shell=True, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, text=True, errors="replace")
+    highlights = []
+    for line in process.stdout:
+        sys.stdout.write(line)
+        if summary_pattern.search(line) and line.strip() not in highlights:
+            highlights.append(line.strip())
+    sys.stdout.flush()
+    code = process.wait()
+    if code == 0:
+        report.add(name, "ok", f"`{command}` passed")
+        return
+    shown = "\n".join(f"    {h}" for h in highlights[:REPORT_LIMIT])
+    more = f"\n    ... and {len(highlights) - REPORT_LIMIT} more" if len(highlights) > REPORT_LIMIT else ""
+    report.add(name, "fail", f"`{command}` exited {code}" + (f":\n{shown}{more}" if shown else ""))
+
+
+# ---------------------------------------------------------------- main
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--issue", type=int, help="issue number; default: from the feature/<N> branch")
+    parser.add_argument("--base", default="origin/main", help="branch the change is measured against (default origin/main)")
+    parser.add_argument("--repo", help="GitHub owner/name; default: from the origin remote")
+    parser.add_argument("--labels", help="comma-separated issue labels, instead of reading GitHub")
+    parser.add_argument("--no-suite", action="store_true", help="skip the typecheck and the unit suite")
+    parser.add_argument("--typecheck-cmd", default="npm run typecheck")
+    parser.add_argument("--test-cmd", default="npm test")
+    args = parser.parse_args(argv)
+
+    top = git(Path.cwd(), "rev-parse", "--show-toplevel", check=False)
+    if top.returncode != 0:
+        print("pre-verify: not inside a git worktree", file=sys.stderr)
+        return 2
+    root = Path(top.stdout.strip())
+    if git(root, "rev-parse", "--verify", f"{args.base}^{{commit}}", check=False).returncode != 0:
+        print(f"pre-verify: base {args.base} does not exist here; pass --base", file=sys.stderr)
+        return 2
+    issue = args.issue
+    if issue is None:
+        branch = git(root, "branch", "--show-current", check=False).stdout.strip()
+        match = re.fullmatch(r"feature/(\d+)", branch)
+        issue = int(match.group(1)) if match else None
+
+    report = Report()
+    check_merge(root, args.base, report)
+
+    labels, warning = [], None
+    if args.labels is not None:
+        labels = [l.strip() for l in args.labels.split(",") if l.strip()]
+    elif issue is not None:
+        slug = args.repo or repo_slug(root)
+        if slug is None:
+            warning = "could not tell the GitHub repository from the origin remote; pass --repo"
+        else:
+            labels, warning = fetch_labels(slug, issue)
+    if warning:
+        report.add("security review", "skip", warning + ". The verifier still checks the label")
+    else:
+        check_security(root, issue, labels or [], report)
+
+    check_removed_strings(root, args.base, report)
+
+    if args.no_suite:
+        report.add("typecheck", "skip", "--no-suite")
+        report.add("unit suite", "skip", "--no-suite")
+    else:
+        run_command(root, "typecheck", args.typecheck_cmd, re.compile(r"error TS\d+"), report)
+        run_command(root, "unit suite", args.test_cmd, re.compile(r"^\s*(FAIL|×)\s"), report)
+
+    print("\n" + "=" * 72)
+    if report.failed:
+        print(f"pre-verify: FAIL, {len(report.failed)} of {len(report.results)} checks failed")
+        for name, _, detail in report.failed:
+            print(f"  ✗ {name}: {detail}")
+        own = [n for n, _, _ in report.failed if n in ("main merged", "security review", "removed strings")]
+        if own:
+            print(f"The {', '.join(own)} failure(s) come from this branch, not from main.")
+    else:
+        passed = sum(1 for r in report.results if r[1] == "ok")
+        skipped = len(report.results) - passed
+        print(f"pre-verify: PASS, {passed} checks passed" + (f", {skipped} skipped" if skipped else ""))
+    for name, status, detail in report.results:
+        if status != "fail":
+            print(f"  {'✓' if status == 'ok' else '-'} {name}: {detail.splitlines()[0] if detail else status}")
+    return 1 if report.failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
