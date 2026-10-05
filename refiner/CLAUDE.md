@@ -52,6 +52,14 @@ The internet-exposed surfaces in this app are the Noise handshake, the relay soc
 
 The builder reads this label to decide whether to audit its own plan before writing code, and the verifier fails a labelled ticket whose plan has no `## Security review` section.
 
+When you apply the label, also put the requirement in the body, because a label alone was missed. Desktop #1726 was labelled 33 seconds before its builder started, and its plan shipped with no review. Add this line to `## Technical Notes`, naming the surfaces from the list above that the ticket touches. It goes in even on an xs ticket, which otherwise has no Technical Notes:
+
+```markdown
+**Security-sensitive** (<surfaces it touches>): the plan needs a `## Security review` section from `builder/security-review.md` with a verdict, committed with the plan before any implementation code.
+```
+
+The pre-verify check the dispatcher runs before the verifier fails a labelled ticket whose plan lacks that section.
+
 ### `needs-real-claude`
 
 Apply it when acceptance can only be proven by a run against a real, live Claude behind a real pyry daemon, rather than the fake transport the rest of the pipeline uses. That is the case when the acceptance criteria name any of these:

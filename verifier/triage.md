@@ -7,6 +7,7 @@ Read this when your gate note says **TRIAGE MODE**, or when no gate note arrived
 Only when no gate note was injected. Run them once, in this order, then follow the matching path: green goes to judgment, red goes through this file using your own logs.
 
 ```bash
+python3 "$AGENTS_REPO_PATH/bin/pre-verify-check" --no-suite
 npm install --no-audit --no-fund
 npm run check:docs
 npm test 2>&1 | tee "$V/test.log"
@@ -21,13 +22,14 @@ The injected failure context names the failing gate and carries its output tail.
 | Observed | Classification | Next action |
 |---|---|---|
 | `npm install` failed | **infra failure** | Nothing about the diff was tested. Post the infra template. Do not route to rework. Go on to judgment; your verdict alone decides. |
+| `pre-verify-check` failed | **red (branch check)**, never pre-existing | Its summary names each failed check. A missing `## Security review` on a `security-sensitive` ticket, or main not merged, is a regression: route `needs-rework:builder` with the summary as a MUST FIX, no baseline run. For removed strings, open each named spec line and confirm it asserts something the change no longer renders; if it does, route the same way. If it does not, say the finding is a false alarm in the verdict, run the remaining gates yourself from `npm install` on, and take their path. |
 | `npm run check:docs` failed | **red (docs failure)**, and almost always pre-existing | The builder cannot write `docs/knowledge/features/`, so this is rarely the PR's doing. Confirm at the merge-base before routing anywhere: reproduce, and if the merge-base is red too, treat it as pre-existing and route it as case 2 under "Routing after the comparison". Only a false heading or an oversized file inside the PR's own diff is a regression, and that routes to `needs-rework:builder`. |
 | `npm run build` failed | **red (build failure)** | Always a regression (the PR's tree doesn't typecheck or build). `needs-rework:builder` immediately — no baseline run. |
 | `npm test` failed and failing tests are extractable | **red (test failure)** | Run the baseline comparison (§ below). Routing depends on the regression vs pre-existing partition. |
 | `npx playwright test` failed and failing specs are extractable | **red (e2e failure)** | Same baseline comparison, on the e2e tier (§ below). Electron e2e can flake, so the partition matters even more here. |
 | `npm test` or `npx playwright test` non-zero but no parseable failing names (vitest crash, Electron failed to launch, OOM, missing dependency, no test output) | **infra failure** | Post the infra template. Do not route to rework on this signal alone. Go on to judgment; your verdict alone decides. |
 
-The gates run in order and stop at the first red, so a docs failure in the note means only the install ran, a build failure means the docs guard and the unit suite already passed, a test failure means the build never ran, and an e2e failure means install, docs guard, unit suite and build all passed and `out/` in your worktree is fresh — say so in the verdict, and remember that `npm run build` is also part of the builder's own gate, so a red there is a builder that skipped its verification step.
+The gates run in order and stop at the first red, so a pre-verify failure means no other gate ran, a docs failure means the pre-verify check and the install ran, a build failure means the docs guard and the unit suite already passed, a test failure means the build never ran, and an e2e failure means install, docs guard, unit suite and build all passed and `out/` in your worktree is fresh — say so in the verdict, and remember that `npm run build` is also part of the builder's own gate, so a red there is a builder that skipped its verification step.
 
 **Getting the PR-side log.** Prefer the injected context: if it holds the full `npm test` output, save it to `$V/test.log`. If it is only a tail without parseable `FAIL` lines on a test-tier failure, reproduce once in the PR worktree — `npm install --no-audit --no-fund` first if `node_modules` is missing, then `npm test 2>&1 | tee "$V/test.log"` — to capture the full log. That reproduction is triage, not a judgment-mode gate re-run; it is the one situation where you run `npm test` yourself.
 

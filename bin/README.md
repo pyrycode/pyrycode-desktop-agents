@@ -18,6 +18,7 @@ so the dispatcher knows where the consumer's per-agent CLAUDE.md files,
 | `pyry-logs` | Tail dispatcher logs. `pyry-logs` (latest), `pyry-logs -a` (all), `pyry-logs <ticket>` (filter by issue number). |
 | `pyry-typecheck` | Run `pnpm typecheck` in `dispatcher/` (the submodule). |
 | `pyry-test` | Run `pnpm test` in `dispatcher/` (the submodule). Pass-through args. |
+| `pre-verify-check` | Run from a Desktop ticket worktree. Checks that main is merged, that a `security-sensitive` ticket's plan has its `## Security review`, and that no `e2e/` spec still expects a string or test id the change removed, then runs the typecheck and the unit suite. `--no-suite` skips the last two; the dispatcher's first verifier gate runs it that way. Tests: `python3 bin/pre-verify-check.test.py`. |
 
 ## MacBook Electron test permission
 
