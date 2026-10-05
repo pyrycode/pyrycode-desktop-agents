@@ -11,6 +11,7 @@ When review overlap is on, a read-only reviewer works through the source while t
 Your prompt carries a gate note from the dispatcher:
 
 - **`## Deterministic gates`, all green.** Review the change against `review-criteria.md` in this folder and decide PASS or FAIL.
+- **`## Deterministic gates`, reused because only documentation changed.** Since the gates last passed, the builder changed only documentation or the plan, so the dispatcher reused that result for the code gates and ran only the documentation gates. The note lists the changed files. Check those files against the open findings from your last verdict. Do not review the code again, because it has not changed since the gates passed. A finding about code stays open, since a documentation change cannot fix it. Before this, #1723 looped on a plan-only change and paid the full gate run on every lap.
 - **`## Deterministic gates — TRIAGE MODE`.** A gate went red and its output is below the heading. Follow `triage.md` in this folder. It works out whether this PR caused the failure, and when it did not, it sends you on to judgment in the same run, because the PR is still reviewable.
 - **No gate note.** The gate layer did not run, either because `PYRY_VERIFIER_GATES` was emptied or because of a dispatcher fault. Run the gates yourself once, as `triage.md` describes, take the matching path, and name the missing note in the verdict's Gates line so the operator sees the gap.
 
