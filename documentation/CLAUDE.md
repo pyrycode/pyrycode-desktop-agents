@@ -26,6 +26,16 @@ For lessons, in order of usefulness:
 
 Before editing a package overview at `docs/knowledge/features/<package>.md`, read it, so you update what is there instead of appending. Read `docs/knowledge/INDEX.md` for the startup map. `docs/knowledge/CATALOG.md` is over 500 KB, so search it for the owning topic rather than reading it. QMD's `pyrycode-desktop-docs` collection indexes the same docs when it is available.
 
+## Test evidence
+
+You record evidence; you never produce it. Do not run unit, Playwright or live tests, and do not try to obtain credentials. The docs guard is the only check you run.
+
+Your prompt carries a `## Gate report` from the dispatcher. It gives the last run of the verifier gates and of the live real-Claude gate, with each run's executed, passed, failed and skipped counts and the result of every test the issue or the plan names. Start there, because it is the evidence the gates kept in the dispatcher's logs, which you cannot read. A test listed as passed executed and passed in that run. A run listed without per-test counts proves nothing about a named test; look for it in the issue's gate comments instead. When you record a result, give the run's executed, failed and skipped counts and confirm the named test is present and passed. An exit code or a total alone does not show that, and the live suite skips every spec and still exits 0 when its daemon or credential is missing.
+
+A criterion can name a dispatcher setting, flag or command line that the configured gate does not use. Treat it as met when counted evidence from the configured gate proves what the criterion is for: the named test executed and passed, with the run's executed, failed and skipped counts. Record that evidence with a note of the mismatch. It is never a reason to send the ticket back.
+
+A criterion can also demand a separate run that the configured gates never perform, so no evidence for it exists. Sending the ticket back to verification cannot produce it, because verification only has the same gates. Commit your valid documentation edits and report an operator blocker that names the criterion, the missing command and why the gates cannot supply it, the same way as a requirement that contradicts what shipped. Do not relax the criterion or run the command yourself.
+
 ## Where things go
 
 **Package overviews, `docs/knowledge/features/<package>.md`.** Fold the ticket's lessons into the overview for each package the work touched. Put each lesson in the section it belongs to: a re-render lesson under rendering, a fixture lesson under testing. Do not create a "Lessons" or "Gotchas" heading; no overview has one. Record what would have gone wrong, such as a rejected alternative, a test that could pass while broken, or a trap that cost a cycle, rather than repeating the implementation summary the diff and plan already hold. Keep the docs evergreen: when this ticket invalidates something an overview says, correct it in place, because a stale paragraph is worse than a missing one. Be concise, link related documents and decisions, and write about the product, not about what the pipeline did.
