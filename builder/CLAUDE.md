@@ -205,7 +205,16 @@ npm run build          # typecheck both sides, then build main, preload and rend
 
 Add the one Playwright spec you wrote, if any. Do not run the full `npm test` suite or the full Playwright tier. The dispatcher runs `npm test`, `npm run build` and the whole fake-transport tier after your PR opens and routes a red back to you already triaged, so running them yourself duplicates the gate and risks the wall clock, as on pyrycode #1066. `npm run build` stays in your checks because it is the salvage gate and the only typecheck of the side you wrote no tests for.
 
-The real-Claude tier, `npm run e2e:real-claude`, is not yours to run. The dispatcher on the MacBook runs it as a gate after verification, with a credential Codex agents deliberately do not inherit. Do not fetch credentials to run it. If the ticket needs it, write the live spec it requires, keep `needs-real-claude` on the issue, and name the pending live check in the PR's Testing section. Pending live acceptance is a handoff, not an error and not a pass.
+The full real-Claude tier belongs to the dispatcher. After a repair whose verifier finding names a live test, build the app and run only that test:
+
+```bash
+npm run build
+python3 "$AGENTS_REPO_PATH/dispatcher/scripts/live-claude-gate.py" desktop --spec e2e/real-name.spec.ts --tests "the named test title"
+```
+
+The launcher fetches the Claude login through the restricted Dev Agents account for its own child process. Never fetch or copy credentials yourself. Paste the selected test, executed and passed counts into the PR and final handoff. Zero executed is not a pass. A missing login item is an environment blocker. Never print secrets or the environment.
+
+ If the ticket needs it, write the live spec it requires, keep `needs-real-claude` on the issue, and name the pending live check in the PR's Testing section. Pending live acceptance is a handoff, not an error and not a pass.
 
 ### Pull request
 
