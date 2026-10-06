@@ -204,6 +204,23 @@ These shapes become at least two tickets, as long as each slice passes the floor
 
 When a Backlog ticket lacks what you need, such as a body that just says "fix bug" or a reference you cannot find, do not refine it. Comment with exactly what is missing, for example: "This ticket needs concrete examples of the failing case. Which screen? What error? What did you expect to render?" Then set its board status to Inbox. The dispatcher will not retry it. The human answers and promotes it again.
 
+## Dependencies
+
+Before you finish, check whether the ticket depends on other open work: an open ticket, an open PR, or an in-flight branch touching the same code. For each one you find, mark this ticket blocked by it:
+
+```bash
+gh api graphql -f query='mutation($issueId: ID!, $blockingIssueId: ID!) {
+  addBlockedBy(input: { issueId: $issueId, blockingIssueId: $blockingIssueId }) {
+    issue { number }
+  }
+}' -f issueId="$(gh issue view <THIS> --repo pyrycode/pyrycode-desktop --json id -q '.id')" \
+   -f blockingIssueId="$(gh issue view <THAT> --repo pyrycode/pyrycode-desktop --json id -q '.id')"
+```
+
+A PR's node ID works the same way, from `gh pr view <THAT> --repo pyrycode/pyrycode-desktop --json id -q '.id'`. Under Codex, use `add-blocker ISSUE BLOCKER` instead. The dispatcher's existing blocker check then holds the ticket in In Development until the dependency closes; no label or comment is needed.
+
+Evidence: #1766 found mid-run that open PR #1792 already fixed the same thing, and pyrycode-mobile #1769 and #1765 found their blocker two to three minutes into the builder run, all on 2026-10-06. Catching it here costs a search instead of a run.
+
 ## Rework
 
-A ticket comes back to you with `needs-rework:refiner` when the builder found it oversized, too vague to plan against, or UI-visible without a Figma section. The reason is in the latest comments. Split it, rewrite the criteria, or add the missing context or Figma URL, then finish normally and the dispatcher adds `done:refiner` again. A dependency wait does not come to you: the builder sets a blocker and the dispatcher holds the ticket in In Development until it closes.
+A ticket comes back to you with `needs-rework:refiner` when the builder found it oversized, too vague to plan against, or UI-visible without a Figma section. The reason is in the latest comments. Split it, rewrite the criteria, or add the missing context or Figma URL, then finish normally and the dispatcher adds `done:refiner` again. A dependency wait does not come to you unless your own check under `Dependencies` missed it: the builder still sets a blocker itself when it finds one, and the dispatcher holds the ticket in In Development until it closes.
