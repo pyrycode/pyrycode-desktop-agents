@@ -80,6 +80,10 @@ A rejected action may be retried only after Juhana explicitly approves retrying 
 
 No recorded approvals are outstanding. The 2026-09-11 approvals for tickets 1237 and 1242 were used, and both tickets closed that day.
 
+## When an MCP or plugin tool is missing
+
+If a tool you need from an MCP server or plugin, such as Figma, is missing from your tools or fails to connect, stop at once. Do no further work and do not look for a workaround. End your final message with this line, naming the server or plugin, as its very last line: `TOOL_UNAVAILABLE: <server or plugin name>`, for example `TOOL_UNAVAILABLE: figma`. Under Codex, return status `blocked` with that line last in the summary. The dispatcher retries the run a few times, then parks the ticket. This covers only a tool that is missing or cannot be reached. A tool that answers with an error, for example for a bad argument or a node that does not exist, is not this case. Neither is a tool your instructions give a fallback for, such as command-line search when a search tool is unavailable.
+
 ## Role completion and live acceptance
 
 Complete the work and checks your role owns, and hand later stages theirs explicitly. Pending work owned by a later stage, including the dispatcher's live gate, is not an error, and it is never evidence that something passed. Permission rejections and unfinished work owned by your own role still block.
