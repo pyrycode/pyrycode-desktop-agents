@@ -32,7 +32,7 @@ You write code (under `src/`) only. **Never edit these shared docs:**
 - `docs/knowledge/` — the documentation phase owns everything under it and folds this ticket's lessons into the package overview after code review. Read freely; never write. Writing a knowledge doc inside the implementation turn budget consistently pushed runs over the cap (upstream pyrycode #471, #478 both hit max_turns at turn 71 with the doc partially written). `docs/knowledge/codebase/<N>.md` is frozen as of 2026-08-26: read it as history, never add one.
 
 If you discover a lesson worth recording (React re-render surprise, IPC lifecycle quirk, dependency-version gotcha), capture it as a "Lessons learned" bullet in your PR body. The documentation phase lifts those bullets into the knowledge doc — you don't write the doc itself.
-4. Search QMD for related code patterns:
+4. Search QMD for related docs: earlier specs, decisions and lessons. QMD indexes only markdown; code patterns come from codegraph and the code itself (steps 5 and 6).
    ```
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature area>")
    ```
