@@ -102,3 +102,13 @@ Same as pyrycode/agents — private, no public license. Internal use within the 
 - [pyrycode/agent-dispatcher](https://github.com/pyrycode/agent-dispatcher) — the dispatcher submodule
 - [pyrycode/pyrycode-mobile-agents](https://github.com/pyrycode/pyrycode-mobile-agents) — sibling fork this was forked from
 - [pyrycode/agents](https://github.com/pyrycode/agents) — upstream fork source
+
+## Document guard
+
+`bin/docs-guard.mjs` owns the pipeline's feature-document guard.
+Run `node "$AGENTS_REPO_PATH/bin/docs-guard.mjs"` from a Desktop checkout.
+The product's `npm run check:docs` remains a compatibility launcher.
+Deploy this agents change before the matching product change.
+
+`bin/pyry-test --slow` includes full-duration dispatcher timeout and wait-credit proofs.
+Ordinary `bin/pyry-test` keeps the fast policy and subprocess tests.
