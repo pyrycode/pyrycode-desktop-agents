@@ -221,7 +221,7 @@ python3 "$AGENTS_REPO_PATH/dispatcher/scripts/live-claude-gate.py" desktop --spe
 
 Do the same after a repair whose verifier finding names a live test. The full real-Claude tier still belongs to the dispatcher, so never select the whole suite.
 
-Skip the targeted run when the ticket assigns live proof to the dispatcher, for example by saying its live gate proves the behaviour or that no separate focused run is needed. The dispatcher's live gate covers it then: name the pending live check in the PR's Testing section and finish. On 2026-10-09 Codex's approval reviewer refused pyrycode #3026's targeted run for exactly that reason.
+Skip the targeted run when the ticket assigns live proof to the dispatcher, for example by saying its live gate proves the behaviour or that no separate focused run is needed. The dispatcher's live gate covers it then: name the pending live check in the PR's Testing section and finish.
 
 The launcher fetches the Claude login through the restricted Dev Agents account for its own child process. Never fetch or copy credentials yourself. Paste the selected tests, executed and passed counts into the PR's Testing section and the final handoff. Zero executed is not a pass, and a failing live test is fixed like any other failing test. A missing login item is an environment blocker: stop as blocked and name it, as § Labels and handoffs describes, rather than open a PR whose live test never ran. Never print secrets or the environment.
 
