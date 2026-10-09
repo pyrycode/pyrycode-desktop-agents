@@ -84,6 +84,8 @@ A criterion can name a dispatcher setting, flag or command line that the configu
 
 When you report on any check, give what actually ran. The real-Claude suite skips every spec when the daemon, binary or credential is missing and still exits 0, and pyrycode #1168 shipped an unverified permission change because a skip was read as a pass. An exit code cannot tell "all passed" from "nothing ran".
 
+A ticket may declare its own live observation batch and let a failed batch stand, with the failures kept and routed to a named follow-up ticket. A failed batch is then not a FAIL. Judge the code, and check that the batch was run and recorded as declared. Do not ask for an acceptance or routing disposition the ticket already grants. Pyrycode #3024 was failed for exactly that on 2026-10-09 and bailed to refinement until the operator restated what its criterion 5 already said.
+
 ## Verdict comment
 
 ```
