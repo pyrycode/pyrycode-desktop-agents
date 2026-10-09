@@ -28,7 +28,7 @@ You run **AFTER** the QA agent. QA already verified mechanical gates (`npm run b
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<topic of the PR>")
    ```
    Fall back to `pyrycode-docs` if no desktop-specific hits.
-5. **Use codegraph for blast-radius checks** (see § Codegraph below). Reading the diff alone shows what changed; codegraph shows what consumes the changed symbols and may break.
+5. **Use codegraph for blast-radius checks** (see § CodeGraph below). Reading the diff alone shows what changed; codegraph shows what consumes the changed symbols and may break.
 
 ## Never Update
 
@@ -37,34 +37,42 @@ Code review writes PR comments and label updates only. **Never edit these shared
 - `docs/lessons.md` — frozen
 - `docs/knowledge/INDEX.md` and `docs/knowledge/CATALOG.md` — documentation phase maintains these, no other pipeline role
 
-## Codegraph (use it before grep)
+<!-- CODEGRAPH_START -->
+## CodeGraph
 
-Pyrycode-desktop is indexed for codegraph; the `mcp__codegraph__codegraph_*` MCP tools are wired into your tool surface, and the dispatcher symlinks the canonical `.codegraph/` index into your worktree. **Default to codegraph for symbol-level questions; fall back to grep only when codegraph returns no useful results.**
+Adapted from the block CodeGraph 1.6.2 writes into agent instruction files (`src/installer/instructions-template.ts`, github.com/colbymchenry/codegraph).
 
-For code review specifically, the highest-leverage use is **blast-radius** — finding what the diff doesn't show:
+This repository is indexed by CodeGraph. A ticket worktree gets its own copy of the index, and the codegraph server keeps it in step with your edits within about a second. Reach for it BEFORE grep/find or reading files when you need to understand or locate code:
 
-- **For each non-additive change (signature change, removal, behaviour change):** run `codegraph_callers <symbol>` against the symbol's *pre-change* shape. Cross-check that the diff updates every call site. Missed call sites are the highest-cost MUST FIX class because CI catches them late and the developer wastes a turn-cycle.
-- **For each new exported type/function:** run `codegraph_search <name>` to check whether a similar symbol already exists. Duplication-of-pattern is a SHOULD FIX (hurts maintenance) — codegraph spots it deterministically where Read + skim is stochastic.
-- **For each touched file's containing directory:** run `codegraph_files` to see the directory shape. Helps you judge whether a new file is the right home or just convenient placement.
+- **MCP tool:** `codegraph_explore` answers most code questions in one call: the relevant symbols' verbatim, line-numbered source, the call paths between them (including dynamic-dispatch hops grep can't follow) and a blast radius of what depends on them. Name a file or symbol in the query to read its current source. If it is listed but deferred, load it by name via tool search.
+- **Shell (always works):** `codegraph explore "<symbol names or question>"` prints the same output. For a complete list of call sites, `codegraph callers <symbol>`; for transitive dependents, `codegraph impact <symbol>`. The shell reads the index without updating it.
+
+Trust codegraph's results; don't re-verify them with grep. Use it instead of Read and grep; use grep only for string literals, comments, docs and your own new code. If a response starts with a staleness banner or flags a file as changed on disk, Read the files it lists. If there is no `.codegraph/` directory, skip CodeGraph entirely.
+<!-- CODEGRAPH_END -->
+
+For code review specifically, the highest-leverage use is **blast-radius**: finding what the diff doesn't show.
+
+- **For each non-additive change (signature change, removal, behaviour change):** run `codegraph_explore` naming the symbol; its blast radius gives the callers per file and the tests that cover them, and `codegraph callers <symbol>` in the shell gives the complete list. Cross-check that the diff updates every call site. When the diff renamed or removed the symbol, the old name has no definition in the index, so search for the old name as text to find leftover callers. Missed call sites are the highest-cost MUST FIX class because CI catches them late and the developer wastes a turn-cycle.
+- **For each new exported type/function:** run `codegraph_explore` naming it and the pattern it implements, to check whether a similar symbol already exists. Duplication-of-pattern is a SHOULD FIX (hurts maintenance), and codegraph spots it deterministically where Read + skim is stochastic.
+- **For each touched file's containing directory:** run `codegraph files --filter <dir>` in the shell to see the directory shape. Helps you judge whether a new file is the right home or just convenient placement.
 
 Other decision rules:
 
-- **"What does this changed function call internally?"** → `codegraph_callees <symbol>` — useful when the diff changes behaviour and you want to verify nothing downstream breaks
-- **"What's the broader context for the area being reviewed?"** → `codegraph_context "<feature area phrase>"` — when the diff spans multiple files and you want a structured map before reading
+- **"What does this changed function call internally?"** → `codegraph_explore` naming the function. Its source and call paths show what it calls, useful when the diff changes behaviour and you want to verify nothing downstream breaks.
+- **"What's the broader context for the area being reviewed?"** → `codegraph_explore` with a question about the feature area, when the diff spans multiple files and you want a structured map before reading.
 
-**When to fall back to grep / Read:**
+**When grep / Read is right:**
 
-- The diff itself — read it via `gh pr diff` not codegraph
-- Comment-only references, string literals, log messages — grep them
-- Test name strings (vitest `describe` / `it` titles, `data-testid` references) — grep
-- Codegraph returned empty results when you expected hits — note the gap, then grep
-- The developer's *new* code (not yet re-indexed in the canonical repo) — Read it directly from the diff
+- The diff itself: read it via `gh pr diff` not codegraph
+- Comment-only references, string literals, log messages: grep them
+- Test name strings (vitest `describe` / `it` titles, `data-testid` references): grep
+- A name the diff renamed or removed: search for the old name as text
 
 **Smell phrases that signal you're skipping codegraph for a too-quick review:**
 
 - *"The diff looks straightforward, no need to check callers"* (the diff doesn't show callers — that's the point of the check)
 - *"I'll trust that the developer's tests catch this"* (tests cover what the developer thought of; codegraph catches what they didn't)
-- *"Three call sites are listed in the spec's 'Files to read first', that's the full set"* (verify with `codegraph_callers` — specs miss things, especially for refactor work)
+- *"Three call sites are listed in the spec's 'Files to read first', that's the full set"* (verify with `codegraph_explore` or `codegraph callers <symbol>`: specs miss things, especially for refactor work)
 
 **Don't pay for both.** If codegraph answers the question, don't grep. Each tool call is a turn, and code review's turn budget is shared with sub-agents.
 
@@ -192,7 +200,7 @@ If the ticket does NOT have the `security-sensitive` label, skip this section en
 
 1. Run `gh pr diff <number>` to get the full diff.
 2. Read affected files in full (not just the diff) for surrounding context. React components especially — the diff hides re-render implications you can only see in context. **QA's gates have already passed** — `npm run build` and `npm test` are green by the time you start; do not re-run them.
-3. Apply judgment review per § "Review Criteria" — React re-render behaviour, TypeScript idiom, architecture compliance, accessibility, visual fidelity. Use codegraph for blast-radius checks per § "Codegraph".
+3. Apply judgment review per § "Review Criteria": React re-render behaviour, TypeScript idiom, architecture compliance, accessibility, visual fidelity. Use codegraph for blast-radius checks per § "CodeGraph".
 4. Write findings as PR comments with line references.
 5. Make the PASS/FAIL decision.
 6. **If FAIL: run `gh issue edit <ticket-number> --add-label needs-rework:developer --repo pyrycode/pyrycode-desktop` BEFORE returning.** The *label* is what the dispatcher reads to route the ticket back to the developer. The "Decision: FAIL" line in your PR comment is for humans only — without the label, the dispatcher treats the run as a pass, applies `done:code-review`, and auto-advances broken work to the Documentation column. This is non-negotiable; see "Mechanical contract" below.

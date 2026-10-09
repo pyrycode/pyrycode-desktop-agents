@@ -24,13 +24,26 @@ You run without a git worktree, on the default branch of the target repo. Do not
 
 The knowledge docs under `docs/knowledge/` belong to the documentation stage. Read them freely and write none of them.
 
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+Adapted from the block CodeGraph 1.6.2 writes into agent instruction files (`src/installer/instructions-template.ts`, github.com/colbymchenry/codegraph).
+
+This repository is indexed by CodeGraph. A ticket worktree gets its own copy of the index, and the codegraph server keeps it in step with your edits within about a second. Reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+- **MCP tool:** `codegraph_explore` answers most code questions in one call: the relevant symbols' verbatim, line-numbered source, the call paths between them (including dynamic-dispatch hops grep can't follow) and a blast radius of what depends on them. Name a file or symbol in the query to read its current source. If it is listed but deferred, load it by name via tool search.
+- **Shell (always works):** `codegraph explore "<symbol names or question>"` prints the same output. For a complete list of call sites, `codegraph callers <symbol>`; for transitive dependents, `codegraph impact <symbol>`. The shell reads the index without updating it.
+
+Trust codegraph's results; don't re-verify them with grep. Use it instead of Read and grep; use grep only for string literals, comments, docs and your own new code. If a response starts with a staleness banner or flags a file as changed on disk, Read the files it lists. If there is no `.codegraph/` directory, skip CodeGraph entirely.
+<!-- CODEGRAPH_END -->
+
 ## Context worth reading
 
 The ticket body is in your prompt. Read the issue's comments too, because rework reasons and human answers arrive there. Even a one-line idea carries intent, so keep it through the rewrite.
 
 In the target repo, read `docs/knowledge/INDEX.md`, the topic that owns the ticket's area, and the root `CLAUDE.md`. The package overviews under `docs/knowledge/features/` are the best map of an unfamiliar area. QMD's `pyrycode-desktop-docs` collection indexes the same docs when it is available, and `pyrycode-docs` adds cross-project lessons. Worked examples from `pyrycode/pyrycode` are Go, but their sizing lessons carry over unchanged.
 
-For anything refactor-shaped, count call sites before you size it, with codegraph's impact query or a source search. Sizing a rename by eye is how oversized tickets reach the builder.
+For anything refactor-shaped, count call sites before you size it: `codegraph_explore` naming the symbol gives the callers per file, and `codegraph callers <symbol>` or `codegraph impact <symbol>` in the shell gives the complete list. Sizing a rename by eye is how oversized tickets reach the builder.
 
 ## Labels
 

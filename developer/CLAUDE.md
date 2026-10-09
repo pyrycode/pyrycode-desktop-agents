@@ -37,32 +37,41 @@ If you discover a lesson worth recording (React re-render surprise, IPC lifecycl
    mcp__qmd__query(collection: "pyrycode-desktop-docs", query: "<feature area>")
    ```
    Add `pyrycode-docs` when the desktop collection has no hits — many pipeline lessons transfer (sizing, scope discipline, recovery).
-5. **Use codegraph for symbol-level questions** (see § Codegraph below). The spec's "Files to read first" list is your starting point; use codegraph to expand it as you discover symbols you need to understand.
+5. **Use codegraph for symbol-level questions** (see § CodeGraph below). The spec's "Files to read first" list is your starting point; use codegraph to expand it as you discover symbols you need to understand.
 6. Read existing code in the affected areas to match patterns. React + Zustand conventions diverge from typical Node/backend TypeScript — match what's already in `src/`.
 
-## Codegraph (use it before grep)
+<!-- CODEGRAPH_START -->
+## CodeGraph
 
-Pyrycode-desktop is indexed for codegraph; the `mcp__codegraph__codegraph_*` MCP tools are wired into your tool surface, and the dispatcher symlinks the canonical `.codegraph/` index into your worktree. **Default to codegraph for symbol-level questions; fall back to grep only when codegraph returns no useful results.**
+Adapted from the block CodeGraph 1.6.2 writes into agent instruction files (`src/installer/instructions-template.ts`, github.com/colbymchenry/codegraph).
+
+This repository is indexed by CodeGraph. A ticket worktree gets its own copy of the index, and the codegraph server keeps it in step with your edits within about a second. Reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+- **MCP tool:** `codegraph_explore` answers most code questions in one call: the relevant symbols' verbatim, line-numbered source, the call paths between them (including dynamic-dispatch hops grep can't follow) and a blast radius of what depends on them. Name a file or symbol in the query to read its current source. If it is listed but deferred, load it by name via tool search.
+- **Shell (always works):** `codegraph explore "<symbol names or question>"` prints the same output. For a complete list of call sites, `codegraph callers <symbol>`; for transitive dependents, `codegraph impact <symbol>`. The shell reads the index without updating it.
+
+Trust codegraph's results; don't re-verify them with grep. Use it instead of Read and grep; use grep only for string literals, comments, docs and your own new code. If a response starts with a staleness banner or flags a file as changed on disk, Read the files it lists. If there is no `.codegraph/` directory, skip CodeGraph entirely.
+<!-- CODEGRAPH_END -->
 
 The two highest-leverage moments for you:
 
-- **Before changing any function signature, removing any export, or renaming any component/type** — run `codegraph_callers <symbol>` to enumerate every call site you must update. Missing one is a build break that wastes a turn-cycle compiling and re-fixing.
-- **Before extending a function or adding a sibling** — run `codegraph_callees <symbol>` to understand internal structure, and `codegraph_search <name>` to find existing patterns you should mirror rather than reinvent.
+- **Before changing any function signature, removing any export, or renaming any component/type**: run `codegraph_explore` naming the symbol. Its blast radius gives the callers per file and the tests that cover them; `codegraph callers <symbol>` in the shell lists every call site you must update. Missing one is a build break that wastes a turn-cycle compiling and re-fixing. Once you have renamed or removed a symbol, the old name has no definition in your index, so search for any leftover caller of the old name as text.
+- **Before extending a function or adding a sibling**: run `codegraph_explore` naming the function and its neighbours. Their source and call paths show the internal structure and the existing patterns you should mirror rather than reinvent.
 
 Other decision rules:
 
-- **"What blast radius does this change have?"** → `codegraph_impact <symbol>` — direct call sites + transitive dependents in one query. Use this before any non-additive change.
-- **"Where is this defined; what's its signature?"** → `codegraph_node <symbol>` — single-symbol details with structural context.
-- **"What's the relevant code surface for this ticket?"** → `codegraph_context "<ticket title + paraphrased AC>"` — useful when the spec's "Files to read first" list feels short or the ticket spans more than the architect's spec covered.
+- **"What blast radius does this change have?"** → `codegraph_explore` naming the symbol, or `codegraph impact <symbol>` in the shell for the transitive dependents. Use this before any non-additive change.
+- **"Where is this defined; what's its signature?"** → `codegraph_explore` naming the symbol, or `codegraph query <name>` in the shell.
+- **"What's the relevant code surface for this ticket?"** → `codegraph_explore` with the ticket's key symbols or a question about the area. Useful when the spec's "Files to read first" list feels short or the ticket spans more than the architect's spec covered.
 
-**When to fall back to grep / Read:**
+**When grep is right:**
 
 - Comment-only references (codegraph parses code, not comments)
-- String literals (URLs, paths, log messages — grep them)
-- Documentation files (`docs/`, `CLAUDE.md` — Read or QMD)
-- Tests that reference symbols by string (vitest `describe`/`it` names, React Testing Library queries like `getByRole`/`getByText` — grep)
-- Codegraph returned empty results when you expected hits — note the gap, then grep
-- Your own pending edits within the worktree (the symlinked index reflects the canonical repo's state, not your in-flight changes — for changes you just made, use grep within your worktree)
+- String literals (URLs, paths, log messages: grep them)
+- Documentation files (`docs/`, `CLAUDE.md`: Read or QMD)
+- Tests that reference symbols by string (vitest `describe`/`it` names, React Testing Library queries like `getByRole`/`getByText`: grep)
+- Your own new code
+- A name your branch renamed or removed
 
 **Smell phrases that signal you're skipping codegraph for grep without a reason:**
 
@@ -74,7 +83,7 @@ Other decision rules:
 
 ## Citations — name the symbol, never the line
 
-Every code comment and every note you write follows the builder's rule: ``the guard in `validatePairingPayload` ``, never `pairing.ts:315`, never a range like `foo.ts:120-140`, never a bare `:NNN`. A line number is stale the moment anything above it moves, and that happens within a single ticket's lifetime. Upstream measured the cost: renumbering ate 35-49% of some commits' added lines and exhausted two developer budgets outright (pyrycode #1417, #1452). Use `codegraph_search` to get the symbol name. Do not copy the surrounding file's older `file.ts:NNN` comments, and do not copy one an older spec hands you; that habit is what this rule exists to stop. This repo has no build guard for it, so the discipline is yours.
+Every code comment and every note you write follows the builder's rule: ``the guard in `validatePairingPayload` ``, never `pairing.ts:315`, never a range like `foo.ts:120-140`, never a bare `:NNN`. A line number is stale the moment anything above it moves, and that happens within a single ticket's lifetime. Upstream measured the cost: renumbering ate 35-49% of some commits' added lines and exhausted two developer budgets outright (pyrycode #1417, #1452). Use `codegraph_explore` to get the symbol name. Do not copy the surrounding file's older `file.ts:NNN` comments, and do not copy one an older spec hands you; that habit is what this rule exists to stop. This repo has no build guard for it, so the discipline is yours.
 
 ## Figma (read it before writing UI code)
 
