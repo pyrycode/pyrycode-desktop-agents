@@ -93,7 +93,7 @@ The refiner applies the same five numbers during refinement, and you apply them 
 
 **Count total written work, not production lines.** Tests, helpers and a log call on every reject branch add up, and each test costs its own edit and debugging cycle. On 2026-05-16 three plans that counted 60 to 150 production lines landed 541, 2096 and 1071 lines, and all three exhausted their budgets: pyrycode #432, #445 and #446.
 
-**Count call sites on refactor-shaped work.** Renaming or changing the signature of an exported type, union member or function, replacing a widely used type, flipping many imports at once, or adding a prop to a component rendered from many places all cascade. Count the consumers with `codegraph_impact`, or `grep -rn <symbol> src/` when the index has nothing. Above 10, split, usually as introduce the new alongside the old, migrate the consumers, then remove the old.
+**Count call sites on refactor-shaped work.** Renaming or changing the signature of an exported type, union member or function, replacing a widely used type, flipping many imports at once, or adding a prop to a component rendered from many places all cascade. Count the consumers with `codegraph_explore` naming the symbol, whose blast radius gives the callers per file, or `codegraph impact <symbol>` in the shell for the complete list. Above 10, split, usually as introduce the new alongside the old, migrate the consumers, then remove the old.
 
 **The raw count is the count.** Edits that each look trivial still cost a read, an edit and a build. Pyrycode #75 framed 26 call sites as mechanical edits, collapsible to one replace per file and about 12 turns, sized it small, and exhausted its budget at 61 turns. If you find yourself writing a paragraph about why the real number is lower than the raw one, that paragraph is the signal to split.
 
@@ -141,7 +141,7 @@ A `## Figma` section reading `N/A — <justification>` is deliberate. Echo it in
 
 Write the design to `docs/specs/architecture/<ticket>-<slug>.md`. You are its first reader, because it reloads your context on a rework or a continuation leg, and the verifier is its second. Use these sections:
 
-- `## Files read`: the reading list behind the design. Give each path, the symbols that matter and one line on why. `codegraph_context` is a good start. When a package overview holds something that changes how this ticket should be built, name it here, because a lesson reaches a rework run only if the plan carries it. For example, ``src/main/transport/RelayConnection.ts` → `RelayConnection`: interface contract``.
+- `## Files read`: the reading list behind the design. Give each path, the symbols that matter and one line on why. `codegraph_explore` with the ticket's key symbols is a good start. When a package overview holds something that changes how this ticket should be built, name it here, because a lesson reaches a rework run only if the plan carries it. For example, ``src/main/transport/RelayConnection.ts` → `RelayConnection`: interface contract``.
 - `## Design source`: on UI-visible work, as `ui-work.md` describes.
 - `## Context`: what problem this solves and why now. Note here if the work deserves an ADR.
 - `## Design`: module structure, key types, the discriminated-union state and event shapes of any store surface, data flow and re-render seams.
@@ -276,9 +276,20 @@ The target's root `CLAUDE.md` holds the stack, layout and conventions. These are
 
 In the plan and in code comments, write ``the guard in `validatePairingPayload` `` rather than `pairing.ts:315`, and never a range such as `pairing.ts:120-140`. A line number goes stale as soon as anything above it moves, which happens within a single ticket: you write the plan against one tree and implement against a later one. Upstream measured about 800 line citations, 22 of them dead, with renumbering eating 35 to 49 percent of the added lines in some commits and two implementation budgets exhausted outright on pyrycode #1417 and #1452. If a symbol name cannot locate what you mean, the declaration is too big, and saying so helps more than a line number. Do not copy older `file.ts:NNN` comments from the surrounding file. This repository has no build check for it.
 
-### Codegraph
+<!-- CODEGRAPH_START -->
+## CodeGraph
 
-The target is indexed for codegraph, and the dispatcher links the index into your worktree. When the `codegraph_*` tools are available, prefer them for symbol questions: `codegraph_context` maps a ticket's surface in one query, `codegraph_impact` and `codegraph_callers` find every call site before you change a signature or remove an export, and `codegraph_search` finds existing patterns to mirror. Grep misses the cascade through helpers and wrappers. The index does not hold comments, string literals, test titles, `data-testid` values, documentation or your own new code, so grep those, and grep everything when codegraph is unavailable, as on Codex.
+Adapted from the block CodeGraph 1.6.2 writes into agent instruction files (`src/installer/instructions-template.ts`, github.com/colbymchenry/codegraph).
+
+This repository is indexed by CodeGraph. A ticket worktree gets its own copy of the index, and the codegraph server keeps it in step with your edits within about a second. Reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+- **MCP tool:** `codegraph_explore` answers most code questions in one call: the relevant symbols' verbatim, line-numbered source, the call paths between them (including dynamic-dispatch hops grep can't follow) and a blast radius of what depends on them. Name a file or symbol in the query to read its current source. If it is listed but deferred, load it by name via tool search.
+- **Shell (always works):** `codegraph explore "<symbol names or question>"` prints the same output. For a complete list of call sites, `codegraph callers <symbol>`; for transitive dependents, `codegraph impact <symbol>`. The shell reads the index without updating it.
+
+Trust codegraph's results; don't re-verify them with grep. Use it instead of Read and grep; use grep only for string literals, comments, docs and your own new code. If a response starts with a staleness banner or flags a file as changed on disk, Read the files it lists. If there is no `.codegraph/` directory, skip CodeGraph entirely.
+<!-- CODEGRAPH_END -->
+
+`codegraph_explore` with the ticket's key symbols or a question about the area maps a ticket's surface in one call, and naming a symbol shows existing patterns to mirror. Before you change a signature or remove an export, its blast radius gives the callers per file, and `codegraph callers <symbol>` or `codegraph impact <symbol>` in the shell gives the complete list. Grep misses the cascade through helpers and wrappers. Grep comments, string literals, test titles, `data-testid` values, documentation and your own new code. A name your branch renamed or removed has no definition in the index any more, so search for the old name as text to find leftover callers. If the MCP tool is missing, use the shell form from the block above.
 
 ## Bugs outside the ticket
 
