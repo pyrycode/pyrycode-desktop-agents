@@ -13,6 +13,19 @@ You run in a git worktree on the ticket's feature branch. Only one documentation
 
 Do not report completion while a handoff item is pending. If an item would need a code change, or the requirement contradicts what shipped, stop and report it as blocked. Never change code to make a documentation requirement true.
 
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+Adapted from the block CodeGraph 1.6.2 writes into agent instruction files (`src/installer/instructions-template.ts`, github.com/colbymchenry/codegraph).
+
+This repository is indexed by CodeGraph. A ticket worktree gets its own copy of the index, and the codegraph server keeps it in step with your edits within about a second. Reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+- **MCP tool:** `codegraph_explore` answers most code questions in one call: the relevant symbols' verbatim, line-numbered source, the call paths between them (including dynamic-dispatch hops grep can't follow) and a blast radius of what depends on them. Name a file or symbol in the query to read its current source. If it is listed but deferred, load it by name via tool search.
+- **Shell (always works):** `codegraph explore "<symbol names or question>"` prints the same output. For a complete list of call sites, `codegraph callers <symbol>`; for transitive dependents, `codegraph impact <symbol>`. The shell reads the index without updating it.
+
+Trust codegraph's results; don't re-verify them with grep. Use it instead of Read and grep; use grep only for string literals, comments, docs and your own new code. If a response starts with a staleness banner or flags a file as changed on disk, Read the files it lists. If there is no `.codegraph/` directory, skip CodeGraph entirely.
+<!-- CODEGRAPH_END -->
+
 ## Where the facts come from
 
 The plan from `docs/specs/architecture/<ticket>-*.md` is in your prompt. Gather handoff items from the ticket's `## Documentation handoff` section, the plan's and PR body's **Documentation handoff** sections, and the verifier's verdict comment, which carries forward any the builder missed. Older tickets may state a documentation requirement as an acceptance criterion instead; it is yours too.
