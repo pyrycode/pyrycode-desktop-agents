@@ -79,12 +79,12 @@ item_id=$(gh project item-add 7 --owner pyrycode --url "$url" --format json --jq
 project_id=$(gh project view 7 --owner pyrycode --format json --jq '.id')
 field_json=$(gh project field-list 7 --owner pyrycode --format json)
 status_field_id=$(echo "$field_json" | jq -r '.fields[] | select(.name == "Status") | .id')
-inbox_option_id=$(echo "$field_json" | jq -r '.fields[] | select(.name == "Status") | .options[] | select(.name == "Inbox") | .id')
+backlog_option_id=$(echo "$field_json" | jq -r '.fields[] | select(.name == "Status") | .options[] | select(.name == "Backlog") | .id')
 
 gh project item-edit --project-id "$project_id" --id "$item_id" \
-  --field-id "$status_field_id" --single-select-option-id "$inbox_option_id"
+  --field-id "$status_field_id" --single-select-option-id "$backlog_option_id"
 ```
 
-Resolve the field and option IDs at run time, because editing a project field reissues them. The bug goes to Inbox, which is for human triage; the operator promotes it when it is ready. On Codex the same steps are `issue-create`, `board-add` and `board-status <issue> Inbox`.
+Resolve the field and option IDs at run time, because editing a project field reissues them. The bug goes to Backlog for refinement without human promotion. On Codex the same steps are `issue-create`, `board-add` and `board-status <issue> Backlog`. Use Inbox only when the ticket needs a specific decision or missing input from the operator, and comment with that need. An unknown technical cause is investigation work for Backlog.
 
 Then skip the test that exposed it, linking the new ticket, and open your PR as usual. If even the failing test cannot be written without the fix, which is rare, send the ticket back to refinement with a one-line explanation so the refiner can sequence the bug ticket as a blocker.
