@@ -96,7 +96,7 @@ Complete the work and checks your role owns, and hand later stages theirs explic
 
 A builder that has implemented, passed its scoped checks and opened its PR reports completed and hands live acceptance to the dispatcher, keeping `needs-real-claude` on the issue. The verifier preserves that requirement.
 
-The MacBook dispatcher runs the real-Claude gate automatically, with the Claude credential its startup loads through 1Password. Codex agents deliberately do not inherit that credential. Do not copy credentials into agent environments, or fetch them to duplicate the gate. The gate must record the tests that actually executed before it accepts live validation, and a missing credential in the gate itself is a blocking environment failure.
+The dispatcher runs the full real-Claude gate automatically with its protected startup credential. For targeted live repairs, builders alone receive that loaded login as `PYRY_LIVE_CLAUDE_TOKEN`. The shared live-test launcher maps it into the test child's Claude login and removes account credentials. It uses the restricted Dev agents account only when the loaded login is absent. Other Codex roles receive neither credential. Use the configured launcher and never print credentials or the environment. The gate must record the tests that actually executed before it accepts live validation, and a missing credential in the gate itself is a blocking environment failure.
 
 ## For roles that size or plan work: refiner and builder
 
