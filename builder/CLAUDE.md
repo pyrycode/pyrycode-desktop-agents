@@ -178,6 +178,10 @@ git commit -m "spec: <one-line title> (#<ticket>)"
 
 Your worktree is a fresh checkout with no `node_modules`, so run `npm install` before any test or build. If it fails on missing binaries, the host lacks a matching Node or Electron toolchain. Name the missing tool when you stop rather than shimming it in.
 
+### Edits and escalated commands
+
+Under Codex, make file edits with `apply_patch` as their own step, and run `npm` as a separate command when it needs `require_escalated`. Never put a file edit, an inline Python or shell rewrite included, in the same command as an escalated validation run. The automatic reviewer then judges the edit script as well, and it can misread one. On pyrycode-mobile #2149 (2026-10-14) it rejected an additive test insert as discarding the file's later tests, and the run stopped with its implementation uncommitted.
+
 ### Test first
 
 Write the failing test first, watch it fail for the right reason, then implement until it passes, then tidy.
