@@ -123,11 +123,15 @@ If a tool you need from an MCP server or plugin, such as Figma, is missing from 
 
 ## Role completion and live acceptance
 
-Complete the work and checks your role owns, and hand later stages theirs explicitly. Pending work owned by a later stage, including the dispatcher's live gate, is not an error, and it is never evidence that something passed. Permission rejections and unfinished work owned by your own role still block.
+Complete the work and checks your role owns, and hand later stages theirs explicitly. Permission rejections and unfinished work owned by your role still block.
 
-A builder that has implemented, passed its scoped checks and opened its PR reports completed and hands live acceptance to the dispatcher, keeping `needs-real-claude` on the issue. The verifier preserves that requirement.
+Desktop's normal verifier gate includes captured client replay through the actual application. The launcher retires `needs-real-claude` parking and automatic live execution with `PYRY_REAL_CLAUDE_GATE_ENABLED=0`, even if an older local environment still supplies a live command. Other consumers retain their gate. Do not add the retired label or assume a later automatic live run will happen.
 
-The dispatcher runs the full real-Claude gate automatically with its protected startup credential. For targeted live repairs, builders alone receive that loaded login as `PYRY_LIVE_CLAUDE_TOKEN`. The shared live-test launcher maps it into the test child's Claude login and removes account credentials. It uses the restricted Dev agents account only when the loaded login is absent. Other Codex roles receive neither credential. Use the configured launcher and never print credentials or the environment. The gate must record the tests that actually executed before it accepts live validation, and a missing credential in the gate itself is a blocking environment failure.
+Explicit live criteria remain required when replay cannot prove current provider/daemon behavior, physical tool effects, encryption, transport or OS integration. Name each scenario and its owner. Builders run their required checks; an operator-owned run needs an explicit handoff/hold before merge. Verifiers review counted evidence and do not publish PASS with required live acceptance missing. Documentation never converts a replay pass into a live claim. The existing system-prompt reset fixme stays excluded until its actual live assertion succeeds.
+
+Use the target's `docs/recorded-tests.md` for capture, guarded replay and `npm run e2e:recordings:verify`. The fresh verifier reports contract drift and never silently replaces fixtures. Preserve original assertions and failed evidence. Keep `npm run e2e:real:gate` and physical/native checks available explicitly; a missing credential or zero executed tests is not a pass.
+
+Targeted live builders alone may receive the protected loaded login as `PYRY_LIVE_CLAUDE_TOKEN`. The shared launcher maps it into its child and removes account credentials, falling back to the restricted Dev agents account only when absent. Other Codex roles receive neither credential. Never print credentials or the environment.
 
 ## For roles that size or plan work: refiner and builder
 
