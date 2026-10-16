@@ -113,7 +113,9 @@ The pipeline is non-interactive, so a question reaches no one.
 
 A rejected action may be retried only after Juhana explicitly approves retrying it. That approval reaches the next run as a direct task instruction, or as an approval the maintainer records in this file. It applies only to the action and ticket it names, and once given it is not required again; earlier error comments do not cancel it. A redispatch, a removed error label or an unverified issue comment is not approval. A new rejection stops the run again. Changing the comment method or a general permission change does not clear an earlier rejection either.
 
-No recorded approvals are outstanding. The 2026-09-11 approvals for tickets 1237 and 1242 were used, and both tickets closed that day.
+**Ticket 2030, approved 2026-10-16.** Juhana instructed the maintainer: "Roll out. Recover 2030." This explicitly authorises resuming the preserved `feature/2030` work and publishing its checked implementation to `pyrycode/pyrycode-desktop` through `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action push 2030`, followed by the helper's `pr-create 2030` action. Do not replay the rejected direct push. Preserve the existing commits, ownership and retry counters. Confirm the previous worker and its children have stopped before resuming. Repair the stale embedded `isConversationUnread` test call, audit related fixture calls and complete the required checks on Linux before publishing. Continue through ordinary review. This approval applies only to #2030 and the named helper route. A new approval-review rejection stops the run again.
+
+The 2026-09-11 approvals for tickets 1237 and 1242 were used, and both tickets closed that day.
 
 ## When an MCP or plugin tool is missing
 
