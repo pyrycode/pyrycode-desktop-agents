@@ -11,6 +11,11 @@ const unit = /^npm test(?:\s|$)/
 const electron = /^(?:npx )?playwright test(?:\s|$)/
 
 export function prepareVerifierEnvironment(env) {
+  // Desktop's default application suite includes captured client replay.
+  // Retire label parking as well as execution, even with stale .env settings.
+  // The shared dispatcher pin must understand ENABLED=0 before this rolls out.
+  env.PYRY_REAL_CLAUDE_GATE_ENABLED = '0'
+  env.PYRY_REAL_CLAUDE_GATE_CMD = ''
   if (env.PYRY_VERIFIER_GATES?.trim()) {
     const gates = []
     for (const gate of env.PYRY_VERIFIER_GATES.split(';').map(x => x.trim()).filter(Boolean)) {

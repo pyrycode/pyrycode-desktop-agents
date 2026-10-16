@@ -52,7 +52,7 @@ With no re-review section, review the whole diff, even on a rework.
 
 The dispatcher never reads your comments. It reads labels on the issue.
 
-- **PASS:** add no `needs-rework:*` label. The dispatcher applies `done:verifier` and advances the ticket. The one label you may add on a PASS is `needs-real-claude`, described below.
+- **PASS:** add no `needs-rework:*` label. The dispatcher applies `done:verifier` and advances the ticket. Do not add the retired `needs-real-claude` label.
 - **FAIL:** add `needs-rework:builder` to the issue before you finish. Without it the ticket advances even though your comment says FAIL. On 2026-05-07, pyrycode #155 did exactly that and documentation ran against failed code.
 - **Triage routing** follows `triage.md`.
 - Never apply a `done:*` label yourself. The dispatcher owns those.
@@ -74,11 +74,11 @@ The shared knowledge docs belong to the documentation stage. Read them freely.
 
 You check code and test requirements. Prose documentation belongs to the documentation stage, which runs after you, and that includes protocol reference pages. Compare the ticket with the plan's and the PR's **Documentation handoff** and list every pending item in your verdict, carrying forward any the builder missed. Do not fail the implementation because documentation has not been written yet. Wire behaviour, schemas, golden fixtures and tests are implementation, not documentation, and must pass here.
 
-## Live-Claude tests
+## Replay and explicit live evidence
 
-Do not run `npm run e2e:real-claude` yourself. It needs a live credential, takes minutes and costs money per run. The dispatcher on the MacBook runs it as an automatic gate after your PASS.
+The normal application gate runs captured client scenarios through Desktop. There is no automatic real-Claude gate after your PASS, and `needs-real-claude` no longer routes tickets. Review recordings and strict request/causal validation alongside the original assertions; replay success cannot establish physical effects or current provider/daemon behavior.
 
-Your part is routing. If the ticket's acceptance depends on behaviour only a live Claude exercises, such as a permission round-trip, turn-stream liveness, an interrupt against a real turn or a slash command reaching a running session, make sure the issue carries `needs-real-claude`, and add it if it is missing. Pending live acceptance is a handoff, not a failure.
+For every explicit live criterion, inspect the counted evidence, exact scenario and source provenance in the builder/operator handoff. Missing required live evidence is unfinished acceptance: name the exact missing run and use the existing operator-blocker route. Do not publish PASS on the assumption that a later automatic gate will supply it. If the ticket expressly assigns a later manual acceptance stage, confirm its operator hold exists before handing it over. Preserve encryption, transport, native storage and OS integration checks.
 
 A criterion can name a dispatcher setting, flag or command line that the configured gate does not use, such as `UI_GATE_FULL=1` on Mobile's UI gate in pyrycode-mobile #1797. This applies to every dispatcher gate, not only live. The criterion is met when counted evidence from the configured gate proves what it is for: the named test executed and passed, with the run's executed, failed and skipped counts. Note the mismatch in the verdict. It is never a reason for `status: blocked`, an operator blocker or rework.
 
@@ -113,6 +113,6 @@ Name the symbol, not the line. The builder's next push shifts line numbers, and 
 
 ## Targeted live repair evidence
 
-Accept the builder's pasted fresh single-test pass as evidence for the finding that named that test. Require the exact selected test, nonzero executed and passed counts, and the fresh result path. A skipped or zero-test run proves nothing. This evidence does not replace the dispatcher's full-suite gate or broader acceptance requirements. You receive no Dev Agents account and do not fetch the login yourself.
+Accept the builder's pasted fresh single-test pass as evidence for the finding that named that test. Require the exact selected test, nonzero executed and passed counts, and the fresh result path. A skipped or zero-test run proves nothing. This evidence does not replace the normal application gate or broader explicit live acceptance requirements. You receive no Dev Agents account and do not fetch the login yourself.
 
 A printed token, login or other secret value is a MUST FIX. Identify the leak without repeating its value. An unavailable login or missing item is an environment blocker, not a product test failure.

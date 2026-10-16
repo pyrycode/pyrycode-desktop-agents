@@ -53,11 +53,11 @@ for (const source of ['injected', 'file-only']) test(`real launcher prepares ${s
   try {
     for (const path of ['bin', 'target', 'dispatcher/src', 'dispatcher/scripts', 'dispatcher/node_modules/tsx']) mkdirSync(join(f.directory, path), { recursive: true })
     for (const name of ['pyry-start', 'verifier-runtime.mjs']) writeFileSync(join(f.directory, 'bin', name), readFileSync(join(root, 'bin', name)))
-    writeFileSync(join(f.directory, '.env'), `PYRY_VERIFIER_GATES="${full}"\nPYRY_VERIFIER_GATE_FORMATS='${JSON.stringify({ 'npx playwright test --reporter=json': { format: 'playwright-json', baseline } })}'\n`)
+    writeFileSync(join(f.directory, '.env'), `PYRY_REAL_CLAUDE_GATE_ENABLED=1\nPYRY_REAL_CLAUDE_GATE_CMD=old-live-command\nPYRY_VERIFIER_GATES="${full}"\nPYRY_VERIFIER_GATE_FORMATS='${JSON.stringify({ 'npx playwright test --reporter=json': { format: 'playwright-json', baseline } })}'\n`)
     writeFileSync(join(f.directory, 'dispatcher/src/managed-dispatch.ts'), '')
     writeFileSync(join(f.directory, 'dispatcher/node_modules/tsx/package.json'), JSON.stringify({ type: 'module', exports: './index.mjs' }))
     writeFileSync(join(f.directory, 'dispatcher/node_modules/tsx/index.mjs'), 'export {}')
-    writeFileSync(join(f.directory, 'dispatcher/src/dispatch-bin.ts'), `require('node:fs').writeFileSync(process.env.TEST_CONFIG_RESULT, JSON.stringify({gates:process.env.PYRY_VERIFIER_GATES,formats:process.env.PYRY_VERIFIER_GATE_FORMATS,managed:process.env.PYRY_MANAGED}))`)
+    writeFileSync(join(f.directory, 'dispatcher/src/dispatch-bin.ts'), `require('node:fs').writeFileSync(process.env.TEST_CONFIG_RESULT, JSON.stringify({gates:process.env.PYRY_VERIFIER_GATES,formats:process.env.PYRY_VERIFIER_GATE_FORMATS,managed:process.env.PYRY_MANAGED,liveEnabled:process.env.PYRY_REAL_CLAUDE_GATE_ENABLED,liveCommand:process.env.PYRY_REAL_CLAUDE_GATE_CMD}))`)
     const scripts = {
       'dispatcher/scripts/install-deps.sh': '#!/bin/sh\nexit 0\n',
       access: '#!/bin/sh\nshift\nexec op "$@"\n',
@@ -70,12 +70,14 @@ for (const source of ['injected', 'file-only']) test(`real launcher prepares ${s
     const result = spawnSync('/bin/sh', [join(f.directory, 'bin/pyry-start'), '--managed', '--runner', 'codex'], {
       encoding: 'utf8', timeout: 15000,
       env: { ...f.env, TARGET_REPO_PATH: join(f.directory, 'target'), PYRY_AUTOMATION_ACCESS: join(f.directory, 'access'),
-        TEST_CONFIG_RESULT: resultPath, TEST_OLD_GATES: full, TEST_SETTINGS_SOURCE: source, PYRY_VERIFIER_GATES: undefined, PYRY_VERIFIER_GATE_FORMATS: undefined,
+        TEST_CONFIG_RESULT: resultPath, PYRY_REAL_CLAUDE_GATE_ENABLED: '1', PYRY_REAL_CLAUDE_GATE_CMD: 'stale-inherited-live-command', TEST_OLD_GATES: full, TEST_SETTINGS_SOURCE: source, PYRY_VERIFIER_GATES: undefined, PYRY_VERIFIER_GATE_FORMATS: undefined,
         TEST_OLD_FORMATS: JSON.stringify({ 'npx playwright test --reporter=json': { format: 'playwright-json', baseline } }) }
     })
     assert.equal(result.status, 0, result.stdout + result.stderr)
     const actual = JSON.parse(readFileSync(resultPath, 'utf8'))
     assert.equal(actual.managed, '1')
+    assert.equal(actual.liveEnabled, '0')
+    assert.equal(actual.liveCommand, '')
     assert.match(actual.gates, /rebuild:node;npm test/)
     assert.match(actual.gates, /npm run build;npm run rebuild:electron;npx playwright test --reporter=json/)
     assert.match(JSON.parse(actual.formats)['npx playwright test --reporter=json'].baseline, /verifier-runtime\.mjs.*electron -- npx playwright test/)

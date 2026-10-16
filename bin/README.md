@@ -20,6 +20,17 @@ so the dispatcher knows where the consumer's per-agent CLAUDE.md files,
 | `pyry-test` | Run `pnpm test` in `dispatcher/` (the submodule). Pass-through args. |
 | `pre-verify-check` | Run from a Desktop ticket worktree. Checks that main is merged, that a `security-sensitive` ticket's plan has its `## Security review`, and that no `e2e/` spec still expects a string or test id the change removed, then runs the typecheck and the unit suite. `--no-suite` skips the last two; the dispatcher's first verifier gate runs it that way. Tests: `python3 bin/pre-verify-check.test.py`. |
 
+## Desktop client verification
+
+`pyry-start` preloads `verifier-runtime.mjs` after the local environment is loaded.
+It prepares the Node/Electron ABI for each verifier phase and enforces
+`PYRY_REAL_CLAUDE_GATE_ENABLED=0` with an empty live command. This retires both
+label parking and automatic live execution, including stale saved settings.
+The pinned shared dispatcher must support that switch before rollout.
+Tests: `node --test bin/verifier-runtime.test.mjs` (mocked launch, no board work).
+Normal Playwright includes captured client replay. Explicit live acceptance and
+physical/native checks remain governed by the ticket and shared practice.
+
 ## MacBook Electron test permission
 
 `pyrycode-desktop-test` is the checked helper for built Desktop fake-transport tests.

@@ -73,19 +73,13 @@ When you apply the label, also put the requirement in the body, because a label 
 
 The pre-verify check the dispatcher runs before the verifier fails a labelled ticket whose plan lacks that section.
 
-### `needs-real-claude`
+### Client replay and explicit live acceptance
 
-Apply it when acceptance can only be proven by a run against a real, live Claude behind a real pyry daemon, rather than the fake transport the rest of the pipeline uses. That is the case when the acceptance criteria name any of these:
+Desktop no longer uses `needs-real-claude` or an automatic post-verifier live gate. Do not add the label. `npm run e2e` includes the captured client scenarios through the actual Desktop application without Claude credentials or an external daemon. Read the target's `docs/recorded-tests.md` and `docs/client-replay-migration.md` when assigning coverage.
 
-- A real-Claude e2e spec (`e2e/real-*.spec.ts`), `npm run e2e:real-claude`, or `npm run e2e:real:gate`
-- A behaviour only a live Claude exercises: a permission or approval modal round-trip, turn-stream liveness, an interrupt or queue-drop against a real turn, a tool-permission or trust dialog, a slash command reaching a running session
-- "Verify live", "against a real claude", "on the operator machine", or anything else the fake-transport Playwright tier cannot cover
+Retain explicit live acceptance when replay cannot establish it: current provider/daemon behavior, real tool/file effects, encryption, transport or operating-system integration. Name the exact scenario, its owner and the required counted evidence in the ticket. A source file named `real-*.spec.ts` does not by itself require a live gate; its client assertions also run through replay. Real Claude-to-Codex handover still needs the live conversation proof, not the recorded new-Codex-channel case.
 
-When in doubt, apply it. A wrong label costs one operator glance. A missing one can merge an unverified change.
-
-The reason: a real-Claude suite that skips every spec still exits 0. On this repo `npm run e2e:real-claude` skips everything when `pyry`, `claude` or the credential is missing, and `npm run e2e:real:gate` exists to turn that all-skip into a failure. Upstream shipped an unverified permission change on exactly that misread (pyrycode #1168, PR #1169, 2026-07-22).
-
-The label routes the ticket to the dispatcher's live gate, which runs after verification on the MacBook. The dispatcher will not close a labelled ticket that has not passed it. The verifier adds the label if you miss it, but by then the code is built, so catching it here is what lets the requirement shape the acceptance criteria.
+Do not replace a live criterion with replay evidence or promise that a dispatcher will run it later. A required manual run must have an explicit operator handoff/hold before the ticket can merge. Missing credentials and zero executed tests never count as acceptance.
 
 ## Figma for UI-visible tickets
 

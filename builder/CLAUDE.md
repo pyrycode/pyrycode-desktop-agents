@@ -59,7 +59,7 @@ The dispatcher reads labels and, on Codex, the status you return. It never reads
 | The role needs access this run lacks, such as Figma on a Figma ticket | End with one message naming what is missing. | Return `blocked` naming it. |
 | The dispatcher denied an operation | The shared practice, "Denied and rejected actions". | Return `blocked`. |
 
-The procedures for every row except the first are in `handoffs.md`. Never apply a `done:*` label; the dispatcher owns those. Leave `needs-real-claude` and `security-sensitive` where you find them.
+The procedures for every row except the first are in `handoffs.md`. Never apply a `done:*` label; the dispatcher owns those. Preserve `security-sensitive`. Desktop has retired `needs-real-claude`; required live acceptance is stated explicitly in the ticket.
 
 ## Phase A: plan
 
@@ -216,20 +216,11 @@ The check confirms `main` is merged, confirms the plan has its `## Security revi
 
 Add the one fake-transport Playwright spec you wrote, if any. Do not run the full Playwright tier: the dispatcher runs it after your PR opens and routes a red back to you already triaged. `npm run build` stays in your checks because it is the salvage gate and the only build of the renderer.
 
-**Run every live test you write or change.** A live test is a spec matching `e2e/real-*.spec.ts`. Desktop #1690, #1658 and #1723 shipped live tests that never ran. Build the app, then run each changed spec, selecting the tests you wrote or changed by title:
+**Validate client scenarios through replay.** The default Playwright tier includes `e2e/recorded-clients.spec.ts`, which imports the original real scenario bodies. Run the affected recorded scenario through `npm run e2e:recorded -- --grep "the test title"`; keep every original assertion and strict outgoing request check. The dispatcher runs the complete normal application suite after your PR opens.
 
-```bash
-npm run build
-python3 "$AGENTS_REPO_PATH/dispatcher/scripts/live-claude-gate.py" desktop --spec e2e/real-name.spec.ts --tests "the test title"
-```
+**Run required live checks explicitly.** Follow the ticket's live criteria and the target's `docs/recorded-tests.md`. Use `npm run e2e:recordings:verify` for fresh-capture drift verification, or the shared `live-claude-gate.py desktop --spec ... --tests ...` launcher for a named live scenario. Run live-only effects when changing their assertions or repairing a live finding. Do not invent recordings, overwrite fixtures from a failed run, or claim replay establishes current provider behavior. Preserve failed captures and report drift for review.
 
-Do the same after a repair whose verifier finding names a live test. The full real-Claude tier still belongs to the dispatcher, so never select the whole suite.
-
-Skip the targeted run when the ticket assigns live proof to the dispatcher, for example by saying its live gate proves the behaviour or that no separate focused run is needed. The dispatcher's live gate covers it then: name the pending live check in the PR's Testing section and finish.
-
-The launcher fetches the Claude login through the restricted Dev Agents account for its own child process. Never fetch or copy credentials yourself. Paste the selected tests, executed and passed counts into the PR's Testing section and the final handoff. Zero executed is not a pass, and a failing live test is fixed like any other failing test. A missing login item is an environment blocker: stop as blocked and name it, as § Labels and handoffs describes, rather than open a PR whose live test never ran. Never print secrets or the environment.
-
-Keep `needs-real-claude` on the issue when the ticket has it. Your targeted run proves the test you wrote works; the dispatcher's live gate after the verifier still proves the whole tier.
+The launcher obtains credentials for its child; never fetch, copy or print them yourself. Record exact selected tests, revision/provenance, executed/passed/failed/skipped counts and fresh result paths. Missing login access is an environment blocker, and zero executed is not a pass. A required operator-owned run remains an explicit handoff/hold; there is no automatic full real-Claude gate after verification. Do not use the retired `needs-real-claude` label as that handoff.
 
 ### Pull request
 
