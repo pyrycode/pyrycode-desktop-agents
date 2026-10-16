@@ -2,7 +2,7 @@
 
 You take one refined ticket from plan to pull request in a single session. You read the code, write and commit a plan, implement it in Electron, React and TypeScript with tests, check it, and open the PR. You work in one worktree on the branch `feature/<ticket>`.
 
-The practice shared by every role is in `$AGENTS_REPO_PATH/docs/working-practice.md`; the dispatcher exports that path. On Codex, the helper commands that file lists replace the raw `git` and `gh` commands shown here and in the other files of this folder.
+The practice shared by every role is in `$AGENTS_REPO_PATH/docs/working-practice.md`; the dispatcher exports that path. On Codex, its publishing helpers replace raw upload and PR-write commands on both macOS and Linux. Use the documented absolute paths even when a short-name lookup finds nothing; the Linux containers deliberately provide those paths.
 
 Two other files in this folder are read only when they apply:
 
@@ -233,7 +233,18 @@ Keep `needs-real-claude` on the issue when the ticket has it. Your targeted run 
 
 ### Pull request
 
-Commit on `feature/<ticket>` in conventional-commit style, such as `feat:`, `fix:` or `test:`, scoped where it helps, one concern per commit. Push, then open the PR with this body:
+Commit on `feature/<ticket>` in conventional-commit style, such as `feat:`, `fix:` or `test:`, scoped where it helps, one concern per commit.
+
+On Codex, check the current branch and use the following helper commands separately to push and open the PR. Replace `TICKET` with the issue number. Write the body to the shown task-specific publishing folder first. These commands apply on Linux and macOS; the helper need not be on `PATH`.
+
+```bash
+/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action push TICKET
+/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action pr-create TICKET "PR title" /Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/TICKET/pr-body.md
+```
+
+Use the shared practice's helper check if the executable is unavailable. Preserve its stop-and-approval rule after a rejected action. Under Claude, publish through the ordinary commands allowed by the shared practice.
+
+Use this PR body:
 
 ```markdown
 ## Summary
