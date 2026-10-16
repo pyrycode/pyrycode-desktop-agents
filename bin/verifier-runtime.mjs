@@ -1,6 +1,7 @@
 // Load after op run resolves .env, before the shared dispatcher reads its gates.
 import { fileURLToPath } from 'node:url'
-import { realpathSync } from 'node:fs'
+import { realpathSync, existsSync, readFileSync } from 'node:fs'
+import { parseEnv } from 'node:util'
 import { spawnSync } from 'node:child_process'
 
 const script = fileURLToPath(import.meta.url)
@@ -47,5 +48,14 @@ if (process.argv[1] && realpathSync(process.argv[1]) === script) {
   if (result.error) console.error(result.error.message)
   process.exit(result.status ?? 1)
 } else {
+  // Managed launchers may leave ordinary settings for dispatcher's later .env
+  // load. Read only our two settings first, preserving inherited overrides and
+  // empty values. Do not copy credentials or other configuration into the env.
+  const keys = ['PYRY_VERIFIER_GATES', 'PYRY_VERIFIER_GATE_FORMATS']
+  const file = new URL('../.env', import.meta.url)
+  if (keys.some(key => process.env[key] === undefined) && existsSync(file)) {
+    const saved = parseEnv(readFileSync(file, 'utf8'))
+    for (const key of keys) if (process.env[key] === undefined && saved[key] !== undefined) process.env[key] = saved[key]
+  }
   prepareVerifierEnvironment(process.env)
 }

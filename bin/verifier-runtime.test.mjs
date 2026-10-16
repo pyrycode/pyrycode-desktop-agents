@@ -48,12 +48,12 @@ function run(command, f, failure = '') {
   return spawnSync('/bin/sh', ['-c', command], { cwd: f.directory, env: { ...f.env, TEST_RUNTIME_FAIL: failure }, encoding: 'utf8' })
 }
 
-test('real launcher applies preparation after the environment loader supplies old settings', () => {
+for (const source of ['injected', 'file-only']) test(`real launcher prepares ${source} settings before dispatcher reads them`, () => {
   const f = fixture()
   try {
     for (const path of ['bin', 'target', 'dispatcher/src', 'dispatcher/scripts', 'dispatcher/node_modules/tsx']) mkdirSync(join(f.directory, path), { recursive: true })
     for (const name of ['pyry-start', 'verifier-runtime.mjs']) writeFileSync(join(f.directory, 'bin', name), readFileSync(join(root, 'bin', name)))
-    writeFileSync(join(f.directory, '.env'), '')
+    writeFileSync(join(f.directory, '.env'), `PYRY_VERIFIER_GATES="${full}"\nPYRY_VERIFIER_GATE_FORMATS='${JSON.stringify({ 'npx playwright test --reporter=json': { format: 'playwright-json', baseline } })}'\n`)
     writeFileSync(join(f.directory, 'dispatcher/src/managed-dispatch.ts'), '')
     writeFileSync(join(f.directory, 'dispatcher/node_modules/tsx/package.json'), JSON.stringify({ type: 'module', exports: './index.mjs' }))
     writeFileSync(join(f.directory, 'dispatcher/node_modules/tsx/index.mjs'), 'export {}')
@@ -61,7 +61,7 @@ test('real launcher applies preparation after the environment loader supplies ol
     const scripts = {
       'dispatcher/scripts/install-deps.sh': '#!/bin/sh\nexit 0\n',
       access: '#!/bin/sh\nshift\nexec op "$@"\n',
-      op: '#!/bin/sh\nwhile [ "$1" != -- ]; do shift; done\nshift\nexport PYRY_VERIFIER_GATES="$TEST_OLD_GATES"\nexport PYRY_VERIFIER_GATE_FORMATS="$TEST_OLD_FORMATS"\nexec "$@"\n',
+      op: '#!/bin/sh\nwhile [ "$1" != -- ]; do shift; done\nshift\nif [ "$TEST_SETTINGS_SOURCE" = injected ]; then\nexport PYRY_VERIFIER_GATES="$TEST_OLD_GATES"\nexport PYRY_VERIFIER_GATE_FORMATS="$TEST_OLD_FORMATS"\nfi\nexec "$@"\n',
       pgrep: '#!/bin/sh\nexit 1\n', sleep: '#!/bin/sh\nexit 0\n'
     }
     for (const [name, content] of Object.entries(scripts)) { const path = join(f.directory, name); writeFileSync(path, content); chmodSync(path, 0o755) }
@@ -70,7 +70,7 @@ test('real launcher applies preparation after the environment loader supplies ol
     const result = spawnSync('/bin/sh', [join(f.directory, 'bin/pyry-start'), '--managed', '--runner', 'codex'], {
       encoding: 'utf8', timeout: 15000,
       env: { ...f.env, TARGET_REPO_PATH: join(f.directory, 'target'), PYRY_AUTOMATION_ACCESS: join(f.directory, 'access'),
-        TEST_CONFIG_RESULT: resultPath, TEST_OLD_GATES: full,
+        TEST_CONFIG_RESULT: resultPath, TEST_OLD_GATES: full, TEST_SETTINGS_SOURCE: source, PYRY_VERIFIER_GATES: undefined, PYRY_VERIFIER_GATE_FORMATS: undefined,
         TEST_OLD_FORMATS: JSON.stringify({ 'npx playwright test --reporter=json': { format: 'playwright-json', baseline } }) }
     })
     assert.equal(result.status, 0, result.stdout + result.stderr)
