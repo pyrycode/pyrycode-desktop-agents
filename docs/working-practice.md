@@ -37,11 +37,21 @@ Every dispatcher, agent and interactive session shares one GitHub account and it
 
 Pass every issue body, PR body and comment as a file, never as inline text in a command. Under Codex, even correctly quoted inline prose can stop the approved command from being recognised: on ticket 1237, escaped apostrophes in a comment sent the command to approval review instead.
 
-Under Claude, `gh` with `--body-file` and the GraphQL equivalents of the helper actions below are fine, and the helpers work too. The rest of this section is what Codex needs on the MacBook.
+Under Claude, `gh` with `--body-file` and the GraphQL equivalents of the helper actions below are fine, and the helpers work too. Codex uses the helpers below on both macOS and the managed Linux containers.
 
-### Codex approval rules on the MacBook
+### Codex publishing on macOS and Linux
 
 Juhana approved these on 2026-09-11. New Codex processes load the rules, so start a fresh process after a rules change.
+
+Use the absolute helper paths in this section verbatim. The managed Linux containers deliberately provide `/Users/juhanailmoniemi/.codex/bin` and the matching repository paths, even though their login home is `/home/agent`. These compatibility paths are available on both operating systems.
+
+The helper directory need not be on `PATH`. `command -v pyrycode-desktop-pipeline-action` can return nothing while the helper is installed. Check the documented executable directly:
+
+```bash
+test -x /Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action
+```
+
+If that check fails, report the missing helper as an environment blocker. A missing command lookup does not authorise a direct upload. Keep the inherited managed GitHub connection and the documented paths; do not substitute `$HOME` into the helper or publishing paths.
 
 **Reads.** Direct read rules match command prefixes only, so put the repository option immediately after the subcommand and before the number:
 
@@ -54,6 +64,15 @@ gh pr diff --repo pyrycode/pyrycode-desktop 2339
 The same order applies to issue list and status, and to PR list, status and checks. If the sandbox blocks the connection, request escalated execution of the same command. Do not add a second repository option or use shell substitutions.
 
 **Writes.** Direct GitHub write commands have no automatic approval. Use `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action` with the arguments below, as a separate command, not wrapped in Python, shell substitutions or scripts. If a sandboxed call cannot reach GitHub, request escalated execution of the same helper command.
+
+For a committed ticket branch with its required checks complete, replace `TICKET` with its issue number and run each publishing command separately:
+
+```bash
+/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action push TICKET
+/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action pr-create TICKET "PR title" /Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/TICKET/pr-body.md
+```
+
+Check the current branch before publishing. Codex uses these commands instead of raw `git push` or `gh pr create`, on both operating systems. Read-only Git commands and local commits still use Git normally. The helpers enforce the ticket branch, repository and destination; use the same route for repairs and recovered work. An earlier approval-review rejection still requires the ticket-specific approval described below before publishing is retried.
 
 | Arguments after the helper path | Effect |
 | --- | --- |
