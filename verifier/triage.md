@@ -10,10 +10,14 @@ Only when no gate note was injected. Run them once, in this order, then follow t
 python3 "$AGENTS_REPO_PATH/bin/pre-verify-check" --no-suite
 npm install --no-audit --no-fund
 npm run check:docs
+npm run rebuild:node || exit $?
 npm test 2>&1 | tee "$V/test.log"
 npm run build 2>&1 | tee "$V/build.log"
+npm run rebuild:electron || exit $?
 PLAYWRIGHT_JSON_OUTPUT_NAME="$V/e2e.json" npx playwright test --reporter=list,json 2>&1 | tee "$V/e2e.log"
 ```
+
+The versioned launcher prepares the database library separately for command-line unit tests and the Electron app. A failed preparation is a setup failure. Stop before launching that runtime and retain its diagnostics. Never treat a later passing manual run as a replacement for a failed configured gate.
 
 ## Classify the red
 
@@ -31,7 +35,7 @@ The injected failure context names the failing gate and carries its output tail.
 
 The gates run in order and stop at the first red, so a pre-verify failure means no other gate ran, a docs failure means the pre-verify check and the install ran, a build failure means the docs guard and the unit suite already passed, a test failure means the build never ran, and an e2e failure means install, docs guard, unit suite and build all passed and `out/` in your worktree is fresh — say so in the verdict, and remember that `npm run build` is also part of the builder's own gate, so a red there is a builder that skipped its verification step.
 
-**Getting the PR-side log.** Prefer the injected context: if it holds the full `npm test` output, save it to `$V/test.log`. If it is only a tail without parseable `FAIL` lines on a test-tier failure, reproduce once in the PR worktree — `npm install --no-audit --no-fund` first if `node_modules` is missing, then `npm test 2>&1 | tee "$V/test.log"` — to capture the full log. That reproduction is triage, not a judgment-mode gate re-run; it is the one situation where you run `npm test` yourself.
+**Getting the PR-side log.** Prefer the injected context: if it holds the full `npm test` output, save it to `$V/test.log`. If it is only a tail without parseable `FAIL` lines on a test-tier failure, reproduce once in the PR worktree — `npm install --no-audit --no-fund` first if `node_modules` is missing, then `npm run rebuild:node && npm test 2>&1 | tee "$V/test.log"` — to capture the full log. That reproduction is triage, not a judgment-mode gate re-run; it is the one situation where you run `npm test` yourself.
 
 Extract failing test names. Vitest prints one line per failed test, shaped `FAIL <file> > <describe> > <test name>`:
 
@@ -41,9 +45,10 @@ grep -E '^\s*FAIL ' "$V/test.log" | sed -E 's/^\s*FAIL //' | sort -u
 
 This yields `<file> > <test name>` per failing test — the `comm`-comparable name set the baseline run reuses. The durable fallback if the console format drifts is vitest's JSON reporter: `npm test -- --reporter=json --outputFile="$V/test.json"`, then `jq -r '.testResults[].assertionResults[] | select(.status=="failed") | "\(.ancestorTitles | join(" > ")) > \(.title)"' "$V/test.json" | sort -u`.
 
-**For an e2e red**, the injected tail is Playwright's list-reporter output and rarely carries every failing spec. Reproduce once in the PR worktree — no rebuild, `out/` is fresh because the build gate passed — with the JSON reporter alongside the list one, then extract file-plus-title pairs. Line and column numbers are deliberately dropped, so a spec that merely moved still matches its baseline self:
+**For an e2e red**, the injected tail is Playwright's list-reporter output and rarely carries every failing spec. Reproduce once in the PR worktree — the application build is fresh, but prepare its database library for Electron again before launch — with the JSON reporter alongside the list one, then extract file-plus-title pairs. Line and column numbers are deliberately dropped, so a spec that merely moved still matches its baseline self:
 
 ```bash
+npm run rebuild:electron || exit $?
 PLAYWRIGHT_JSON_OUTPUT_NAME="$V/e2e.json" npx playwright test --reporter=list,json 2>&1 | tee "$V/e2e.log"
 jq -r '[.. | objects | select(has("specs")) | .file as $f | .specs[] | select(.ok == false) | "\($f) › \(.title)"] | unique | .[]' "$V/e2e.json"
 ```
@@ -54,7 +59,7 @@ The JSON reporter nests `describe` blocks as suites, and every suite object carr
 
 Do not route a test failure to `needs-rework:builder` on sight. Re-run the failing tier against the PR's merge-base in a temporary worktree, then classify each failing test as `regression` (passed on baseline, failed on PR) or `pre_existing` (failed on both). **Skip the baseline run entirely if:** red:build or infra failure.
 
-The script below is written for the unit tier. **For red:e2e, run the same procedure with three substitutions:** `PR_FAILS` comes from the `jq` extraction above; step 4 becomes `npm install --no-audit --no-fund && npm run build && PLAYWRIGHT_JSON_OUTPUT_NAME="$V/baseline-e2e.json" npx playwright test --reporter=list,json`, because the baseline worktree has no `out/` either; and `BASELINE_FAILS` comes from the same `jq` walk over `$V/baseline-e2e.json`. Budget for it: the tier runs one Electron process at a time and a full pass takes minutes, on top of the install and the build, so start the baseline run before reading anything else.
+The script below is written for the unit tier. **For red:e2e, run the same procedure with three substitutions:** `PR_FAILS` comes from the `jq` extraction above; step 4 becomes `npm install --no-audit --no-fund && npm run build && npm run rebuild:electron && PLAYWRIGHT_JSON_OUTPUT_NAME="$V/baseline-e2e.json" npx playwright test --reporter=list,json`, because the baseline worktree has no `out/` either; and `BASELINE_FAILS` comes from the same `jq` walk over `$V/baseline-e2e.json`. Budget for it: the tier runs one Electron process at a time and a full pass takes minutes, on top of the install and the build, so start the baseline run before reading anything else.
 
 This is the deterministic safety net for the out-of-scope question. The pre-triage contract — "any red is rework" — meant that PRs which correctly fix one thing while unmasking pre-existing fragility elsewhere burned 3+ rework cycles. The baseline run answers "did THIS PR introduce these failures?" mechanically, with no diff-reasoning or call-graph guessing required. Per the **belt-and-suspenders** principle, the deterministic baseline run is the different-fabric net under the stochastic initial classification.
 
@@ -82,7 +87,7 @@ else
       #    there. `&>` captures BOTH stdout and stderr — vitest writes some
       #    diagnostics to stderr and we need them in the log for accurate
       #    comparison. (`2>&1 > file` is wrong-ordered and would leak stderr.)
-      (cd "$BASELINE_DIR" && npm install --no-audit --no-fund >/dev/null 2>&1 && npm test) &> "$V/baseline-test.log" || true
+      (cd "$BASELINE_DIR" && npm install --no-audit --no-fund >/dev/null 2>&1 && npm run rebuild:node && npm test) &> "$V/baseline-test.log" || true
       if [ -s "$V/baseline-test.log" ]; then
         BASELINE_FAILS=$(grep -E '^\s*FAIL ' "$V/baseline-test.log" | sed -E 's/^\s*FAIL //' | sort -u)
         # 5. Partition: comm -23 = in PR_FAILS only (regressions, PR caused them);
