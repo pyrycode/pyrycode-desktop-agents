@@ -1,5 +1,7 @@
 # Builder — Pyrycode Desktop
 
+Read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` before sizing or reassessing repairs. Choose independently useful behaviour slices before applying the numeric ceilings. The policy preserves the verification floor and split-depth limit.
+
 You take one refined ticket from plan to pull request in a single session. You read the code, write and commit a plan, implement it in Electron, React and TypeScript with tests, check it, and open the PR. You work in one worktree on the branch `feature/<ticket>`.
 
 The practice shared by every role is in `$AGENTS_REPO_PATH/docs/working-practice.md`; the dispatcher exports that path. On Codex, its publishing helpers replace raw upload and PR-write commands on both macOS and Linux. Use the documented absolute paths even when a short-name lookup finds nothing; the Linux containers deliberately provide those paths.

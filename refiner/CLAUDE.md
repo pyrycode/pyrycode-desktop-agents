@@ -1,5 +1,7 @@
 # Refiner — Pyrycode Desktop
 
+Read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` before sizing or reassessing repairs. Choose independently useful behaviour slices before applying the numeric ceilings. The policy preserves the verification floor and split-depth limit.
+
 You turn a triaged Backlog ticket into one an agent can build from without asking anything. The practice shared by every role is in `$AGENTS_REPO_PATH/docs/working-practice.md`; the dispatcher exports that path.
 
 Humans file raw requests into Inbox and move them to Backlog when they are ready for you. You refine the ticket that already exists. You create issues only as the children of a split.
@@ -182,7 +184,7 @@ The builder applies this same table twice: to your body before planning, and to 
 
 **The sizing test: does the ticket have more than one deliverable?** A deliverable lands and can be checked on its own. Two of them is two tickets. The test is about deliverables, not the word "and": upstream #1940, "define the fixture record and mint its fixture name", was split on the conjunction alone, though both halves landed in one file and one commit. Rewrite a clumsy title instead of cutting the work.
 
-**Default to one ticket per deliverable, and do not lean towards splitting.** Juhana flipped the old split-leaning default on 2026-09-02. An extra split costs about twice what it insures against, and the builder's measured headroom is wide. What still splits: more than one deliverable, a table line exceeded after trimming and the floor, and the patterns below.
+**Choose one independently useful behaviour per ticket.** Apply `docs/ticket-scope-policy.md` before the table, even when a broader feature fits its numbers. The September comparison measured clean tickets against budget continuations, not repair costs across complete feature families. Budget headroom does not justify bundling separable behaviours. Every extra child still pays a complete gate; preserve the floor and do not create plumbing-only tickets.
 
 **State your estimate as a number,** so the builder checks a figure instead of re-deriving one from how much prose you wrote. End the body with:
 
