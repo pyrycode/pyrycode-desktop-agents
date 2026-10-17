@@ -6,6 +6,8 @@ The commands named below are the Desktop pipeline helper's actions, described in
 
 ## Split depth: stop at two
 
+Before creating children, read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` for the feature-root and policy markers. Preserve the original feature root on the parent and every child. Closing this parent replaces it with children; it does not complete the feature.
+
 Check the ticket's parentage first, with `relations <ticket>`, which returns its parent and grandparent. Without the helper, this query does the same:
 
 ```bash
