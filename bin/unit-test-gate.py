@@ -50,8 +50,18 @@ def read_report(report, root):
             if status not in {'passed', 'failed', 'pending', 'skipped', 'todo'}:
                 raise ValueError('unfinished test result')
             identity = file + '#' + name
-            if identity in cases: raise ValueError('ambiguous duplicate full test title')
-            cases[identity] = {**case, 'file': file, 'status': status if status in {'passed', 'failed'} else 'skipped'}
+            key = identity
+            if identity in cases:
+                if status == 'failed' or cases[identity]['status'] == 'failed':
+                    raise ValueError('a failing duplicate title has no unique retry selection')
+                # Parameterised green cases may share a title. Preserve every
+                # result for complete coverage, but do not invent an executable
+                # unique name. Exact retries reject these extra identities.
+                index = 2
+                while key in cases:
+                    key = identity + '\0' + str(index)
+                    index += 1
+            cases[key] = {**case, 'file': file, 'status': status if status in {'passed', 'failed'} else 'skipped'}
     counts = {state: sum(c['status'] == state for c in cases.values()) for state in ['passed', 'failed', 'skipped']}
     if (report.get('numTotalTests') != len(cases) or report.get('numPassedTests') != counts['passed'] or
             report.get('numFailedTests') != counts['failed'] or

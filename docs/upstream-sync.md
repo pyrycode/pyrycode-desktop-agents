@@ -69,7 +69,9 @@ setting is required.
 The launcher converts the ordinary complete unit command to the versioned unit
 gate. Vitest JSON is retained and exposed as complete named JUnit evidence.
 Exact retries use the full file and test title. The helper rejects missing,
-skipped, duplicate, unfinished and unintended executed results. Existing
+skipped, unfinished and unintended executed results. Parameterised green cases
+with duplicate titles retain their raw counts. A failing or selected duplicate
+title remains unresolved because Vitest cannot select its individual instance. Existing
 Playwright selected comparisons remain. Final approval requires every configured
 gate, including later steps after an intermittent or inherited failure.
 

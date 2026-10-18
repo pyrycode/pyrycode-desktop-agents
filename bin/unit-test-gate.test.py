@@ -53,6 +53,17 @@ class UnitEvidenceTests(unittest.TestCase):
                       {'version': 1, 'completed': True, 'suiteErrors': ['afterAll failed'], 'unhandledErrors': []}]:
             with self.assertRaises(ValueError): self.gate.check_audit(value)
 
+    def test_green_parameterized_duplicates_keep_full_coverage_but_cannot_be_selected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            value = self.report(root, ('passed', 'passed', 'skipped'))
+            cases = value['testResults'][0]['assertionResults']
+            cases[1]['fullName'] = cases[0]['fullName']
+            actual = self.gate.read_report(value, root)
+            self.assertEqual(len(ET.fromstring(self.gate.junit(actual)).findall('.//testcase')), 3)
+            self.gate.verify_selection(actual, files=['src/a.test.ts'])
+            with self.assertRaises(ValueError): self.gate.verify_selection(actual, ['src/a.test.ts#'+cases[0]['fullName']])
+
     def test_selection_rejects_missing_skipped_and_extra_execution(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
