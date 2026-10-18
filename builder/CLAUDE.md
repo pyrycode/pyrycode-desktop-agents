@@ -208,11 +208,11 @@ Check after your final merge of `main`, because that tree is what the verifier t
 ```bash
 git fetch origin && git merge origin/main
 npm install --no-audit --no-fund
-python3 "$AGENTS_REPO_PATH/bin/pre-verify-check"
+python3 "$AGENTS_REPO_PATH/bin/pre-verify-check" --test-file src/path/affected.test.ts
 npm run build          # typecheck both sides, then build main, preload and renderer
 ```
 
-The check confirms `main` is merged, confirms the plan has its `## Security review` when the issue carries `security-sensitive`, looks for Playwright specs that still expect a string or test id your change removed, then runs the typecheck and the full unit suite. It is the dispatcher's first verifier gate too, so a red here is a red there. Each failure names its reason; fix every one before you open the PR. On Codex, if the sandbox blocks the suite or the label read, request escalated execution of the same command. A label read that still fails only skips the security check, and the verifier checks the label anyway.
+The check confirms `main` is merged, confirms the plan has its `## Security review` when the issue carries `security-sensitive`, looks for Playwright specs that still expect a string or test id your change removed, then runs the typecheck and the exact affected unit file. Choose the real affected file before running the command. Repeat for another affected file when needed. The dispatcher owns the complete unit acceptance suite. The dispatcher runs the branch checks separately and retains full unit acceptance. Each failure names its reason; fix every one before you open the PR. On Codex, if the sandbox blocks the suite or the label read, request escalated execution of the same command. A label read that still fails only skips the security check, and the verifier checks the label anyway.
 
 **Grep the browser tests for what you remove.** Before you remove or rename a visible string, an accessible name, a test id or a class name, search `e2e/` for it with `grep -rn '<string>' e2e/`. Do the same for every string a function renders when you remove its last caller. The check catches the common shapes, not all of them. Desktop #1695 removed the only caller of the function that produced the host-dot labels, and eleven browser tests still looked for them.
 

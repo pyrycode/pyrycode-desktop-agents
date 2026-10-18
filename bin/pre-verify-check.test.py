@@ -259,18 +259,17 @@ class PreVerifyTests(unittest.TestCase):
 
     # -- typecheck and unit suite
 
-    def test_suite_failure_is_summarised(self):
+    def test_builder_must_select_an_affected_file(self):
         self.plan("")
         self.repo.commit()
-        failing = "printf ' FAIL  src/a.test.ts > adds\\n'; exit 1"
-        code, out = self.repo.run("--typecheck-cmd", "true", "--test-cmd", failing, suite=True)
+        code, out = self.repo.run("--typecheck-cmd", "true", suite=True)
         self.assertEqual(code, 1, out)
-        self.assertIn("✗ unit suite: `" + failing + "` exited 1:\n    FAIL  src/a.test.ts > adds", out)
+        self.assertIn("select one affected unit file with --test-file", out)
         self.assertIn("✓ typecheck", out)
 
     def test_typecheck_errors_are_summarised(self):
         failing = "echo \"src/a.ts(1,7): error TS2322: Type 'number' is not assignable\"; exit 2"
-        code, out = self.repo.run("--typecheck-cmd", failing, "--test-cmd", "true", suite=True)
+        code, out = self.repo.run("--typecheck-cmd", failing, suite=True)
         self.assertEqual(code, 1, out)
         self.assertIn("    src/a.ts(1,7): error TS2322", out)
 

@@ -11,7 +11,7 @@ const full = 'npm install --no-audit --no-fund;npm test;npm run build;npx playwr
 const baseline = 'npm install --no-audit --no-fund >&2 && npm run build >&2 && npx playwright test --reporter=json -g {{TESTS}}'
 
 function configure(gates = full, template = baseline) {
-  const result = spawnSync(process.execPath, ['--import', preload, '-e', 'console.log(JSON.stringify({gates:process.env.PYRY_VERIFIER_GATES,formats:process.env.PYRY_VERIFIER_GATE_FORMATS}))'], {
+  const result = spawnSync(process.execPath, ['--import', preload, '-e', 'console.log(JSON.stringify({gates:process.env.PYRY_VERIFIER_GATES,formats:process.env.PYRY_VERIFIER_GATE_FORMATS,inputs:process.env.PYRY_VERIFIER_GATE_INPUTS_CMD}))'], {
     encoding: 'utf8', env: { ...process.env, AGENTS_REPO_PATH: root, PYRY_VERIFIER_GATES: gates,
       PYRY_VERIFIER_GATE_FORMATS: JSON.stringify({ 'npx playwright test --reporter=json': { format: 'playwright-json', baseline: template } }) }
   })
@@ -35,8 +35,14 @@ if(tool==='npx'){
  if(fs.readFileSync(process.env.TEST_RUNTIME_STATE,'utf8')!=='electron')process.exit(43);
  console.log(JSON.stringify({executed:1,passed:1,failed:0}));
 }
+if(tool==='python3'){
+ const spawn=require('node:child_process').spawnSync;
+ const mode=args[0].endsWith('unit-test-gate.py')?'node':args[1];
+ const prep=spawn('npm',['run','rebuild:'+mode],{stdio:['inherit',2,2]});if(prep.status)process.exit(prep.status);
+ if(args[0].endsWith('unit-test-gate.py'))process.exit(spawn('npm',['test'],{stdio:'inherit'}).status);
+}
 `
-  for (const tool of ['npm', 'npx']) { const p = join(directory, tool); writeFileSync(p, fake); chmodSync(p, 0o755) }
+  for (const tool of ['npm', 'npx', 'python3']) { const p = join(directory, tool); writeFileSync(p, fake); chmodSync(p, 0o755) }
   return {
     directory, log,
     env: { ...process.env, PATH: directory + ':' + process.env.PATH, TEST_RUNTIME_LOG: log, TEST_RUNTIME_STATE: state },
@@ -78,8 +84,9 @@ for (const source of ['injected', 'file-only']) test(`real launcher prepares ${s
     assert.equal(actual.managed, '1')
     assert.equal(actual.liveEnabled, '0')
     assert.equal(actual.liveCommand, '')
-    assert.match(actual.gates, /rebuild:node;npm test/)
-    assert.match(actual.gates, /npm run build;npm run rebuild:electron;npx playwright test --reporter=json/)
+    assert.match(actual.gates, /unit-test-gate\.py/)
+    assert.match(actual.gates, /npm run build;python3 .*native-preparation\.py' electron;npx playwright test --reporter=json/)
+    assert.ok(Object.values(JSON.parse(actual.formats)).some(spec => spec.format === 'junit-xml' && spec.baseline.includes('--tests-json {{TESTS_JSON}}')))
     assert.match(JSON.parse(actual.formats)['npx playwright test --reporter=json'].baseline, /verifier-runtime\.mjs.*electron -- npx playwright test/)
   } finally { f.close() }
 })
@@ -92,9 +99,14 @@ test('full gate keeps selection and puts each preparation before its own runtime
     writeFileSync(f.log, '')
     const value = configure()
     const gates = value.gates.split(';')
-    assert.deepEqual(gates, ['npm install --no-audit --no-fund', 'npm run rebuild:node', 'npm test', 'npm run build', 'npm run rebuild:electron', 'npx playwright test --reporter=json'])
+    assert.equal(gates.length, 5)
+    assert.match(gates[1], /unit-test-gate\.py/)
+    assert.match(gates[3], /native-preparation\.py' electron$/)
+    assert.match(value.inputs, /verifier-inputs\.py/)
     for (const gate of gates) assert.equal(run(gate, f).status, 0, gate)
-    assert.deepEqual(f.calls().map(x => x.join(' ')), gates)
+    const calls = f.calls().map(x => x.join(' '))
+    assert.ok(calls.indexOf('npm run rebuild:node') < calls.indexOf('npm test'))
+    assert.ok(calls.indexOf('npm run rebuild:electron') < calls.indexOf('npx playwright test --reporter=json'))
     assert.equal(JSON.parse(value.formats)['npx playwright test --reporter=json'].format, 'playwright-json')
   } finally { f.close() }
 })
