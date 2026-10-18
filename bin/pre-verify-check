@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Pre-verifier check for a Desktop ticket worktree.
 
-Run from the ticket's worktree, after main is merged in. Builders run it in
-full before they open or update a pull request. The dispatcher runs it with
+Run from the ticket's worktree, after main is merged in. Builders select one affected unit file with --test-file before they open or update a pull request. The dispatcher runs it with
 --no-suite as the first PYRY_VERIFIER_GATES command, because its later gates
 run the unit suite and the build. Five checks, every one reported:
 
@@ -17,7 +16,7 @@ run the unit suite and the build. Five checks, every one reported:
    producer lost its last production caller, which is how #1695 broke eleven
    browser tests while the label text itself stayed in the code.
 4. typecheck: `npm run typecheck`.
-5. unit suite: `npm test`, the full vitest suite.
+5. affected unit file: the structured unit gate with --test-file.
 
 Exit 0 when every check passes, 1 when any fails, 2 on a usage error. The
 summary at the end names each failure and its reason; the dispatcher shows
@@ -568,7 +567,7 @@ def main(argv=None):
     parser.add_argument("--labels", help="comma-separated issue labels, instead of reading GitHub")
     parser.add_argument("--no-suite", action="store_true", help="skip the typecheck and the unit suite")
     parser.add_argument("--typecheck-cmd", default="npm run typecheck")
-    parser.add_argument("--test-cmd", default="npm test")
+    parser.add_argument("--test-file", help="one exact affected unit-test file; complete acceptance belongs to the dispatcher")
     args = parser.parse_args(argv)
 
     top = git(Path.cwd(), "rev-parse", "--show-toplevel", check=False)
@@ -609,7 +608,12 @@ def main(argv=None):
         report.add("unit suite", "skip", "--no-suite")
     else:
         run_command(root, "typecheck", args.typecheck_cmd, re.compile(r"error TS\d+"), report)
-        run_command(root, "unit suite", args.test_cmd, re.compile(r"^\s*(FAIL|×)\s"), report)
+        if args.test_file is None:
+            report.add("affected unit tests", "fail", "select one affected unit file with --test-file, or use --no-suite for branch-only checks")
+        else:
+            command = [sys.executable, str(Path(__file__).with_name('unit-test-gate.py')), '--files-json', json.dumps([args.test_file])]
+            import shlex
+            run_command(root, "affected unit tests", shlex.join(command), re.compile(r"^\s*(FAIL|×)\s"), report)
 
     print("\n" + "=" * 72)
     if report.failed:

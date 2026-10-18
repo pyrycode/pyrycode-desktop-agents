@@ -63,3 +63,30 @@ the Claude source review, as the child's stdin file descriptor. It was piped in
 after spawn, and a busy dispatcher could miss the Claude CLI's 3-second stdin
 window, as Mobile #1432's source review did right after a restart. No local
 setting is required.
+
+## Desktop verifier retention and focused units, 2026-10-18
+
+The launcher converts the ordinary complete unit command to the versioned unit
+gate. Vitest JSON is retained and exposed as complete named JUnit evidence.
+Exact retries use the full file and test title. The helper rejects missing,
+skipped, duplicate, unfinished and unintended executed results. Existing
+Playwright selected comparisons remain. Final approval requires every configured
+gate, including later steps after an intermittent or inherited failure.
+
+Strict input checks bind tooling, native preparation, external binaries, ticket
+requirements and supporting source trees. Checked Node and Electron rebuilds
+retain native provenance. Their legitimate mode changes keep the same input key.
+An unrecognised binary or changed generation inputs disable retained reuse.
+A fresh worktree has no checked native receipt or installed dependencies. Its
+first attempt cannot retain a reusable prefix. After preparation, warm attempts
+can retain passing steps under the shared age, source, command and log checks.
+
+Builders run branch and security checks, the required build and affected unit
+files. They use pre-verify-check --test-file with an exact repository path. The
+shared frozen-role policy refuses complete unit runs through the managed helper.
+The dispatcher retains complete unit and browser acceptance. Runtime settings
+are normalised after environment loading, including existing active gate lists.
+
+Deploy the shared Desktop unit-selection validator before this consumer. Update
+the consumer revision without changing machine capacity, owners, saved runners,
+stops or drains. A running worker keeps its loaded source until safe replacement.

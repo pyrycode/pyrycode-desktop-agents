@@ -2,117 +2,49 @@
 
 Read this when your gate note says **TRIAGE MODE**, or when no gate note arrived and you run the gates yourself. The goal is to decide, mechanically where possible, whether this PR caused the red. A PR that fixes one thing while unmasking older fragility elsewhere should not be sent back for rework it cannot do. Before this procedure existed, such PRs burned three or more rework cycles.
 
+## Retained evidence comes first
+
+Read the full stdout, stderr and structured gate reports at their retained paths. A tail is a pointer to those logs. Do not repeat a complete suite to obtain a longer excerpt. Preserve the original failure even when a later exact retry passes.
+
+The dispatcher runs source review alongside the configured automatic checks. Every required step must finish before approval. A passing prefix never certifies an unfinished later step. Continue bounded source review on a red when the build and evidence make it reliable. Report all independent findings together.
+
 ## Running the gates yourself
 
-Only when no gate note was injected. Run them once, in this order, then follow the matching path: green goes to judgment, red goes through this file using your own logs.
+Only when no gate note was supplied. Read the actual `PYRY_VERIFIER_GATES` list and run those steps once in order. Missing or empty configuration is a blocker. Do not substitute an old list or use a pipe that loses the process exit status. Keep separate stdout, stderr and status for every command.
 
-```bash
-python3 "$AGENTS_REPO_PATH/bin/pre-verify-check" --no-suite
-npm install --no-audit --no-fund
-npm run check:docs
-npm run rebuild:node || exit $?
-npm test 2>&1 | tee "$V/test.log"
-npm run build 2>&1 | tee "$V/build.log"
-npm run rebuild:electron || exit $?
-PLAYWRIGHT_JSON_OUTPUT_NAME="$V/e2e.json" npx playwright test --reporter=list,json 2>&1 | tee "$V/e2e.log"
-```
-
-The versioned launcher prepares the database library separately for command-line unit tests and the Electron app. A failed preparation is a setup failure. Stop before launching that runtime and retain its diagnostics. Never treat a later passing manual run as a replacement for a failed configured gate.
+The launcher installs a structured unit gate and prepares the native database separately for Node and Electron. A failed native preparation is an environment failure. Do not use a later manual pass to override a failed required gate.
 
 ## Classify the red
 
-The injected failure context names the failing gate and carries its output tail. Classify before anything else:
+- A named unit or browser failure needs exact retry and unchanged-main attribution below.
+- A failed branch or security check needs its named requirement repaired.
+- A format or documentation error needs attribution against the same unchanged files and rules before assigning product rework.
+- A build error with a confirmed source defect returns that finding to the builder.
+- Missing results, a crashed runner, failed dependency installation, failed native preparation or an unavailable baseline leave evidence incomplete. Preserve the logs and report blocked. These signals alone do not establish a product defect.
 
-| Observed | Classification | Next action |
-|---|---|---|
-| `npm install` failed | **infra failure** | Nothing about the diff was tested. Post the infra template. Do not route to rework. Go on to judgment; your verdict alone decides. |
-| `pre-verify-check` failed | **red (branch check)**, never pre-existing | Its summary names each failed check. A missing `## Security review` on a `security-sensitive` ticket, or main not merged, is a regression: route `needs-rework:builder` with the summary as a MUST FIX, no baseline run. For removed strings, open each named spec line and confirm it asserts something the change no longer renders; if it does, route the same way. If it does not, say the finding is a false alarm in the verdict, run the remaining gates yourself from `npm install` on, and take their path. |
-| `npm run check:docs` failed | **red (docs failure)**, and almost always pre-existing | The builder cannot write `docs/knowledge/features/`, so this is rarely the PR's doing. Confirm at the merge-base before routing anywhere: reproduce, and if the merge-base is red too, treat it as pre-existing and route it as case 2 under "Routing after the comparison". Only a false heading or an oversized file inside the PR's own diff is a regression, and that routes to `needs-rework:builder`. |
-| `npm run build` failed | **red (build failure)** | Always a regression (the PR's tree doesn't typecheck or build). `needs-rework:builder` immediately — no baseline run. |
-| `npm test` failed and failing tests are extractable | **red (test failure)** | Run the baseline comparison (§ below). Routing depends on the regression vs pre-existing partition. |
-| `npx playwright test` failed and failing specs are extractable | **red (e2e failure)** | Same baseline comparison, on the e2e tier (§ below). Electron e2e can flake, so the partition matters even more here. |
-| `npm test` or `npx playwright test` non-zero but no parseable failing names (vitest crash, Electron failed to launch, OOM, missing dependency, no test output) | **infra failure** | Post the infra template. Do not route to rework on this signal alone. Go on to judgment; your verdict alone decides. |
+## Exact failure comparisons
 
-The gates run in order and stop at the first red, so a pre-verify failure means no other gate ran, a docs failure means the pre-verify check and the install ran, a build failure means the docs guard and the unit suite already passed, a test failure means the build never ran, and an e2e failure means install, docs guard, unit suite and build all passed and `out/` in your worktree is fresh — say so in the verdict, and remember that `npm run build` is also part of the builder's own gate, so a red there is a builder that skipped its verification step.
+The automatic unit gate emits JUnit identities shaped `relative/test/file.test.ts#full test title`. Its saved JSON reports retain the original Vitest results. Browser checks retain their existing structured Playwright selection.
 
-**Getting the PR-side log.** Prefer the injected context: if it holds the full `npm test` output, save it to `$V/test.log`. If it is only a tail without parseable `FAIL` lines on a test-tier failure, reproduce once in the PR worktree — `npm install --no-audit --no-fund` first if `node_modules` is missing, then `npm run rebuild:node && npm test 2>&1 | tee "$V/test.log"` — to capture the full log. That reproduction is triage, not a judgment-mode gate re-run; it is the one situation where you run `npm test` yourself.
+When automatic classification already completed, use its recorded results. Do not repeat its comparisons. Otherwise:
 
-Extract failing test names. Vitest prints one line per failed test, shaped `FAIL <file> > <describe> > <test name>`:
+1. Read the exact unresolved failing identities from the retained complete report.
+2. Read that gate's comparison template in `PYRY_VERIFIER_GATE_FORMATS`.
+3. Retry only those names once on the proposed tree. Preserve the original failure separately.
+4. Compare only names that still fail with the recorded merged-main commit in an isolated worktree. Use the same toolchain and native preparation. No complete-suite fallback is permitted.
+5. Record selected names, actual executed identities and passed, failed and skipped counts. Every selected name must execute. A missing name, skipped result, extra executed name, setup failure or incomplete report leaves attribution unresolved.
 
-```bash
-grep -E '^\s*FAIL ' "$V/test.log" | sed -E 's/^\s*FAIL //' | sort -u
-```
+For unit tests, the versioned helper takes `--tests-json` with a JSON array of exact `file#full title` strings. Pass the JSON as one argument. It escapes literal regular-expression characters and checks the actual returned identities. Never shorten a full title or replace the selector with a catch-all expression.
 
-This yields `<file> > <test name>` per failing test — the `comm`-comparable name set the baseline run reuses. The durable fallback if the console format drifts is vitest's JSON reporter: `npm test -- --reporter=json --outputFile="$V/test.json"`, then `jq -r '.testResults[].assertionResults[] | select(.status=="failed") | "\(.ancestorTitles | join(" > ")) > \(.title)"' "$V/test.json" | sort -u`.
+Use the configured browser template for Playwright. It still installs dependencies, builds and prepares the Electron database before the exact selected run. A baseline worktree needs all of those steps. Never launch Electron with a Node-built database library.
 
-**For an e2e red**, the injected tail is Playwright's list-reporter output and rarely carries every failing spec. Reproduce once in the PR worktree — the application build is fresh, but prepare its database library for Electron again before launch — with the JSON reporter alongside the list one, then extract file-plus-title pairs. Line and column numbers are deliberately dropped, so a spec that merely moved still matches its baseline self:
+## Routing after comparison
 
-```bash
-npm run rebuild:electron || exit $?
-PLAYWRIGHT_JSON_OUTPUT_NAME="$V/e2e.json" npx playwright test --reporter=list,json 2>&1 | tee "$V/e2e.log"
-jq -r '[.. | objects | select(has("specs")) | .file as $f | .specs[] | select(.ok == false) | "\($f) › \(.title)"] | unique | .[]' "$V/e2e.json"
-```
+- A named failure that passes on unchanged main and fails on the proposed change is a regression. Return the proven defect to the builder with the original evidence and independent source findings.
+- A failure on both sources is inherited. A passing same-tree retry is intermittent. Keep the original red and link the existing tracker or use the search-first procedure below. These classifications do not waive later required gates.
+- Missing attribution or required gate completion remains blocked. Do not publish PASS or guess that missing baseline execution proves a regression.
 
-The JSON reporter nests `describe` blocks as suites, and every suite object carries its `file`, which is why the walk is recursive rather than `.suites[].specs[]`.
-
-## Baseline comparison for a red test tier
-
-Do not route a test failure to `needs-rework:builder` on sight. Re-run the failing tier against the PR's merge-base in a temporary worktree, then classify each failing test as `regression` (passed on baseline, failed on PR) or `pre_existing` (failed on both). **Skip the baseline run entirely if:** red:build or infra failure.
-
-The script below is written for the unit tier. **For red:e2e, run the same procedure with three substitutions:** `PR_FAILS` comes from the `jq` extraction above; step 4 becomes `npm install --no-audit --no-fund && npm run build && npm run rebuild:electron && PLAYWRIGHT_JSON_OUTPUT_NAME="$V/baseline-e2e.json" npx playwright test --reporter=list,json`, because the baseline worktree has no `out/` either; and `BASELINE_FAILS` comes from the same `jq` walk over `$V/baseline-e2e.json`. Budget for it: the tier runs one Electron process at a time and a full pass takes minutes, on top of the install and the build, so start the baseline run before reading anything else.
-
-This is the deterministic safety net for the out-of-scope question. The pre-triage contract — "any red is rework" — meant that PRs which correctly fix one thing while unmasking pre-existing fragility elsewhere burned 3+ rework cycles. The baseline run answers "did THIS PR introduce these failures?" mechanically, with no diff-reasoning or call-graph guessing required. Per the **belt-and-suspenders** principle, the deterministic baseline run is the different-fabric net under the stochastic initial classification.
-
-```bash
-# 1. PR-side failing test names, already extracted above:
-PR_FAILS=$(grep -E '^\s*FAIL ' "$V/test.log" | sed -E 's/^\s*FAIL //' | sort -u)
-if [ -z "$PR_FAILS" ]; then
-  # Defensive: red:test without parseable names should have classified as
-  # infra-failure. If it didn't, fall through to standard red routing.
-  echo "verifier: red:test with no parseable failing names; routing as standard red" >&2
-else
-  # 2. Resolve baseline ref — the merge-base captures "where this PR diverged from main."
-  BASELINE_REF=$(git merge-base HEAD origin/main 2>/dev/null)
-  if [ -z "$BASELINE_REF" ]; then
-    echo "verifier: merge-base unresolved; routing as standard red" >&2
-  else
-    # 3. Detached worktree at the baseline. `git worktree add` accepts an
-    #    existing EMPTY directory, which is what mktemp -d gives us.
-    BASELINE_DIR=$(mktemp -d -t baseline-verifier-XXXXXX)
-    if ! git worktree add --detach "$BASELINE_DIR" "$BASELINE_REF" >/dev/null 2>&1; then
-      echo "verifier: baseline worktree add failed; routing as standard red" >&2
-      rmdir "$BASELINE_DIR" 2>/dev/null || true   # nothing was checked out; don't leak the dir
-    else
-      # 4. Install deps (the baseline tree has no node_modules) and run npm test
-      #    there. `&>` captures BOTH stdout and stderr — vitest writes some
-      #    diagnostics to stderr and we need them in the log for accurate
-      #    comparison. (`2>&1 > file` is wrong-ordered and would leak stderr.)
-      (cd "$BASELINE_DIR" && npm install --no-audit --no-fund >/dev/null 2>&1 && npm run rebuild:node && npm test) &> "$V/baseline-test.log" || true
-      if [ -s "$V/baseline-test.log" ]; then
-        BASELINE_FAILS=$(grep -E '^\s*FAIL ' "$V/baseline-test.log" | sed -E 's/^\s*FAIL //' | sort -u)
-        # 5. Partition: comm -23 = in PR_FAILS only (regressions, PR caused them);
-        #    comm -12 = in both (pre_existing, PR did not cause them).
-        REGRESSIONS=$(comm -23 <(echo "$PR_FAILS") <(echo "$BASELINE_FAILS"))
-        PRE_EXISTING=$(comm -12 <(echo "$PR_FAILS") <(echo "$BASELINE_FAILS"))
-      else
-        echo "verifier: baseline log empty or not produced; routing as standard red" >&2
-        REGRESSIONS="$PR_FAILS"
-        PRE_EXISTING=""
-      fi
-      # 6. Clean up the baseline worktree (always — leaks rot the dispatcher's worktree list).
-      git worktree remove --force "$BASELINE_DIR" >/dev/null 2>&1 || true
-    fi
-  fi
-fi
-```
-
-**Routing after the comparison** — three cases:
-
-1. **`REGRESSIONS` non-empty** → at least one failing test passed on the baseline but fails on this PR. Post the standard-red template, add `needs-rework:builder`, and **stop there and skip judgment.** The diff you would review is about to change. If `PRE_EXISTING` is also non-empty, mention those too, flagged as "pre-existing, tracked separately," and run § search-first dedupe before posting so the linkage is in the review body.
-
-2. **`REGRESSIONS` empty AND `PRE_EXISTING` non-empty** → every failing test fails on the baseline too. The PR did not introduce them. Track the `PRE_EXISTING` set (§ search-first dedupe), post the out-of-scope-red template, add **no labels from the triage half**, then **go on to judgment in this same run** — the PR itself is reviewable, and your judgment verdict owns the labels from here.
-
-3. **Baseline couldn't run** (merge-base unresolved, worktree add failed, baseline log missing) → fall back to standard red routing (`needs-rework:builder`). The deterministic gate failed; default to safe behaviour.
+Approval requires the dispatcher's complete accepted evidence for every configured gate. A manual exact comparison cannot override a red or unfinished automatic gate.
 
 ## Redact before quoting any log
 
