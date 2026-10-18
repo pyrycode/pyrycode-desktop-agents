@@ -63,6 +63,13 @@ class UnitEvidenceTests(unittest.TestCase):
             self.assertEqual(len(ET.fromstring(self.gate.junit(actual)).findall('.//testcase')), 3)
             self.gate.verify_selection(actual, files=['src/a.test.ts'])
             with self.assertRaises(ValueError): self.gate.verify_selection(actual, ['src/a.test.ts#'+cases[0]['fullName']])
+            for statuses in [('passed', 'skipped'), ('skipped', 'passed')]:
+                value = self.report(root, statuses)
+                leaves = value['testResults'][0]['assertionResults']
+                leaves[1]['fullName'] = leaves[0]['fullName']
+                actual = self.gate.read_report(value, root)
+                with self.subTest(statuses=statuses), self.assertRaises(ValueError):
+                    self.gate.verify_selection(actual, ['src/a.test.ts#'+leaves[0]['fullName']])
 
     def test_selection_rejects_missing_skipped_and_extra_execution(self):
         with tempfile.TemporaryDirectory() as d:

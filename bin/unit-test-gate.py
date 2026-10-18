@@ -79,6 +79,8 @@ def check_audit(audit):
 
 
 def verify_selection(cases, names=None, files=None):
+    if names is not None and any('\0' in identity and identity.split('\0', 1)[0] in names for identity in cases):
+        raise ValueError('a selected duplicate title has no unique executable identity')
     executed = {name for name, case in cases.items() if case['status'] != 'skipped'}
     if names is not None and executed != set(names):
         raise ValueError('selected tests missing, skipped or extra tests executed')
