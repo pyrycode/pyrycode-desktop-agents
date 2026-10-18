@@ -115,7 +115,9 @@ def main():
     combined, status = {}, 0
     for index, (file, titles) in enumerate(groups.items()):
         report = destination / f'{index}.json'
-        command = ['node', str(root / 'node_modules/vitest/vitest.mjs'), 'run']
+        # Vitest's mutable result cache sits inside node_modules by default.
+        # Fresh execution keeps that output out of the installed-tool identity.
+        command = ['node', str(root / 'node_modules/vitest/vitest.mjs'), 'run', '--no-cache']
         if file: command += [file]
         if titles: command += ['--testNamePattern', '^(?:' + '|'.join(re.escape(title) for title in titles) + ')$']
         audit_path = destination / f'{index}.audit.json'
