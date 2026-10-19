@@ -22,22 +22,35 @@ This is a hard gate, because every softer rule failed to stop recursive splittin
 
 The gate reads sub-issue links, so it goes blind if a child is not linked to its parent. Blocker links are not parentage, as the shared practice explains.
 
-## What a finished split looks like
+## Finalize the split as one operation
 
-Every board move, order change, blocker, label and close in a split changes orchestrator workflow through the managed GitHub bridge (see Workflow authority in `docs/working-practice.md`). Until the next publication cycle the GitHub board can show a new child in Inbox or at the end of its column. Confirm the column, labels and state by reading the child back with `gh issue view --repo pyrycode/pyrycode-desktop CHILD --json labels,state,projectItems`, which shows what the orchestrator holds, not by looking at the board. That read does not show blockers or order. Read blockers with `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action relations CHILD`. No read confirms order: the position command succeeding is the confirmation, and the board shows it after publication. Read back before repeating a step that reported an error. On 2026-10-13 the bridge saved both children of Mobile #1984 in Backlog, in the right place, while every `board-status` call reported a failure. Sub-issue links and issue bodies stay on GitHub.
+Keep the parent open while preparing its children. Create each child with `issue-create`, add it to board 7 with `board-add`, and attach it with `add-child <parent> <child>`. Leave children in **Inbox** until finalization. Each child has a self-contained body, original acceptance allocated to it, its own Figma section where applicable, an Estimate, the feature-root markers and `Split from #N`. Preserve original requirements and security review obligations.
 
-**One child issue per deliverable, each self-contained.** Write each body as if the parent never existed: full scope, its own criteria, its own `## Figma` section where UI-visible, its own `Estimate:` line, and links to any decision records in `docs/knowledge/decisions/`. Do not refer to sections of the parent or its plan, because the parent's plan is thrown away and each child's builder plans from its own body. The only tie to the parent is `Split from #N` at the bottom of the body and the sub-issue link. Create each with `issue-create`.
+Do not activate children or move/close the parent with separate workflow commands. The shared authority finalizes the complete split transactionally:
 
-**Each child is on board 7 in Backlog, right after the parent, in dependency order.** Use `board-add`, then `board-status <child> Backlog`, then `board-after`: the first child after the parent, each later child after the previous one. Backlog, not Inbox, because the parent was already triaged. Adding an issue to the board does not set its status, and an item without one is invisible to every column query. Never place a child at the top: it would jump ahead of higher-priority tickets the parent was correctly behind.
+1. Run `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action split-inspect PARENT`. It reads fresh, complete GitHub family links and returns authoritative revisions for the parent, its children and every open dependent, including other imported projects. A truncated or unknown dependent inventory refuses finalization.
+2. Save that JSON in your unique publishing folder. Add a fresh `commandId` and a short `summary`. Order children after the parent in dependency order. Fill each child's `dependsOn` with earlier child numbers it actually needs. Shared-file overlap alone is coordination, not a prerequisite. For each dependent, fill `children` with the child numbers that now own its existing prerequisite. Retain all returned revisions. An empty dependent mapping is not a valid handoff.
+3. Run `/Users/juhanailmoniemi/.codex/bin/pyrycode-desktop-pipeline-action split-finalize PARENT ABSOLUTE_JSON_FILE` as one command. Keep that exact file and identity for retries after an uncertain reply. The finalizer verifies the complete family and revisions, activates children in Backlog after the parent, inherits priority/security/platform labels and original blockers, transfers declared prerequisites without removing existing blockers, records the handoff comments and closes the replaced parent in Done in **one database transaction**. Closing records replacement, not feature delivery.
 
-**Each child is a sub-issue of the parent,** with `add-child <parent> <child>`.
+Example request shape (use the actual inspection values, not these sample numbers):
 
-**A child that needs another child is blocked by it,** with `add-blocker <later> <earlier>`. The dispatcher's open-blocker check is the only thing that keeps the order, because concurrent dispatch can build unrelated tickets side by side. Without the blocker, the later child's builder implements against an API that does not exist yet; pyrycode #41 burned about $4 that way.
+```json
+{
+  "commandId": "split-500-unique",
+  "revision": 8,
+  "summary": "Two independently verifiable results preserve the original acceptance.",
+  "children": [
+    {"number": 501, "revision": 2, "dependsOn": []},
+    {"number": 502, "revision": 3, "dependsOn": [501]}
+  ],
+  "dependents": [
+    {"ticket": "pyrycode/pyrycode-desktop#600", "revision": 4, "children": [502]}
+  ]
+}
+```
 
-**Siblings that write to the same spots are chained too,** even when neither needs the other. When two children follow the same precedent, or name the same insertion point in the same production file, the second one built before the first merges conflicts on every one of those lines, and a merge conflict parks the ticket for a human. Mobile #801 and #802, both told to follow the same earlier decode, collided in 16 places across six files on 2026-09-22. Touching the same large file is not the trigger. A shared precedent or insertion point is.
+Read the result back before repeating any action. An identical committed request returns its saved result even after a lost reply or ended run. If workflow or content changed before commit, inspect again and review the changed scope before submitting a new request. Approval rejections, ownership conflicts, active dependents, pending support work and holds still stop finalization; the new operation never clears them. Follow shared practice after an approval rejection, without replaying a denied operation through another route.
 
-**Tickets that were blocked by the parent now point at the right child.** `relations <parent>` lists what the parent blocks. For each open dependent, find the child that holds what it actually needs, run `add-blocker <dependent> <child>`, and comment on the dependent: "Re-pointed from #<parent> to #<child> as part of #<parent>'s split. Original blocker now lives in #<child>." Leave the old parent blocker in place, since closed blockers are ignored. Without the re-point, closing the parent unblocks the dependent while its real prerequisite is still in flight.
+A failure before commit leaves the parent open and the children inactive. Newly created, linked split children also have a durable admission hold while their parent remains open, even after the creator exits. An unfinished parent cannot be marked ready for implementation. Reuse the existing children and retained request when resuming; do not create replacements. The ordinary refiner can inspect and complete preserved partial work once it has an admitted parent run and any required operator authorization.
 
-**The parent is in Done and closed,** with a comment summarising the split. Set `board-status <parent> Done`, post the comment, then close the issue with `gh issue close`. The helper cannot close issues, so under Codex the close goes through approval review, and a rejection follows the shared practice's recovery rule.
-
-The children reach your column on later dispatch cycles. Do not refine them further in this run.
+The children receive their own later refinement runs after the parent is replaced. Do not refine them further in this run.

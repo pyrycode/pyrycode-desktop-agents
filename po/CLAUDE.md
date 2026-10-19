@@ -236,76 +236,13 @@ Every board move, order change, blocker, label and close in a split changes orch
 
 If a ticket combines multiple concerns, the architect proposes a split via `needs-rework:po`, OR the body would naturally produce >5 acceptance criteria:
 
-1. Use `gh issue create` to create one issue per concern (smaller, sized correctly).
-2. Use `gh project item-add <project-number> --owner pyrycode --url <new-issue-url>` to add each new issue to the project. Then set status to **Backlog** so they're ready for refinement (not Inbox — they've been triaged, the original was already in Backlog).
-
-   **Position children immediately AFTER the parent in Backlog, in dependency order.** Children inherit the parent's priority — if the parent was at column position N, children land at N+1, N+2, ... preserving the relative ordering of higher-priority tickets above and lower-priority tickets below. Default GitHub project ordering puts children wherever, which leaves them behind tickets that should wait for them. Use `updateProjectV2ItemPosition` with `afterId` chaining starting from the parent's project item ID:
-   ```bash
-   # Get parent's project item ID from cwd's repo. v1 dispatcher doesn't pass
-   # it as an env var; remove this lookup block once agent-dispatcher-v2 #68
-   # ships and v2 self-hosts (will set $PYRY_PARENT_ITEM_ID directly).
-   OWNER=$(gh repo view --json owner --jq .owner.login)
-   REPO=$(gh repo view --json name --jq .name)
-   PARENT_ITEM_ID=$(gh api graphql -f query='
-     query($owner: String!, $repo: String!, $num: Int!) {
-       repository(owner: $owner, name: $repo) {
-         issue(number: $num) {
-           projectItems(first: 5) { nodes { id } }
-         }
-       }
-     }' -f owner="$OWNER" -f repo="$REPO" -F num=<PARENT_NUM> \
-     --jq '.data.repository.issue.projectItems.nodes[0].id')
-
-   # First child: position immediately AFTER the parent (preserves column priority).
-   gh api graphql -f query='mutation($projectId: ID!, $itemId: ID!, $afterId: ID!) {
-     updateProjectV2ItemPosition(input: { projectId: $projectId, itemId: $itemId, afterId: $afterId }) {
-       items { totalCount }
-     }
-   }' -f projectId="$PROJECT_ID" -f itemId="$A_ITEM_ID" -f afterId="$PARENT_ITEM_ID"
-
-   # Each subsequent child: position after the previous child
-   gh api graphql -f query='mutation($projectId: ID!, $itemId: ID!, $afterId: ID!) {
-     updateProjectV2ItemPosition(input: { projectId: $projectId, itemId: $itemId, afterId: $afterId }) {
-       items { totalCount }
-     }
-   }' -f projectId="$PROJECT_ID" -f itemId="$B_ITEM_ID" -f afterId="$A_ITEM_ID"
-   # ... and so on for C, D, ...
-   ```
-   The chain — first child after parent, each subsequent after the previous — yields `[..., parent, A, B, C, ..., others]`. The parent's later move to Done leaves children at "top of where the parent used to be," which preserves column priority correctly. **Do NOT use `afterId: null`** for the first child — that places children at the top of Backlog and leapfrogs higher-priority tickets that the parent was correctly positioned behind.
-3. Sub-issue link them to the original via the GraphQL `addSubIssue` mutation, or by referencing the parent issue number in the body ("Split from #N").
-4. **If any child depends on another child, set the dependency natively via `addBlockedBy`.** When the architect's split proposal says "B consumes A's primitives" or "B depends on A landing first," the LATER child (B) needs to be marked as blocked-by the EARLIER child (A). Use the GraphQL mutation:
-   ```bash
-   gh api graphql -f query='mutation($issueId: ID!, $blockingIssueId: ID!) {
-     addBlockedBy(input: { issueId: $issueId, blockingIssueId: $blockingIssueId }) {
-       issue { number }
-     }
-   }' -f issueId="$(gh issue view <B> --json id -q '.id')" -f blockingIssueId="$(gh issue view <A> --json id -q '.id')"
-   ```
-   The dispatcher's `hasOpenBlockers` check then prevents B from being architected/developed until A closes — automatic unblock when A's PR merges. **Do NOT skip this step.** Without it, B's developer agent will hit a retry loop trying to implement against A's missing API (Pyrycode #41 burned ~$4 this way before the agent self-halted).
-5. **Re-point external dependents at the appropriate child.** Other tickets in the project may have been blocked by the parent — when the parent closes, those dependents will appear unblocked even though their actual dependency (the API or scaffolding the parent was supposed to deliver) now lives in one of the children. Query the parent's `blocking` relationship to find them:
-   ```bash
-   gh api graphql -f query='
-     query($num: Int!) {
-       repository(owner: "pyrycode", name: "pyrycode-desktop") {
-         issue(number: $num) {
-           blocking(first: 20) { nodes { number title state } }
-         }
-       }
-     }' -F num=<parent>
-   ```
-   For each OPEN dependent, identify which child contains the API/scaffolding it actually depends on (the architect's split proposal usually names this — "B contains the navigation graph" / "A contains the new store"). Then:
-   - Run `addBlockedBy(dependent, correct_child)` (same mutation shape as step 4).
-   - Comment on the dependent explaining the re-point: *"Re-pointed from #<parent> to #<child> as part of #<parent>'s split. Original blocker now lives in #<child>."*
-   - Do NOT remove the now-stale parent blocker via `removeBlockedBy` — when the parent closes, dispatcher's `hasOpenBlockers` ignores it (filters OPEN only). Leaving it in place is cosmetic-only noise and saves a mutation.
-
-   **Do NOT skip this step.** Without it, dependents unblock when the parent closes (because the parent stops being OPEN) but their actual prerequisite is still in flight in a child. Dispatcher routes the dependent to the next agent against missing code → retry loop → wasted dollars (same failure mode as the child→child case in step 4).
-6. Move the parent's project status to **Done**, then close the original issue with a comment summarizing the split. (The dispatcher's closed-sweep will catch you if you forget the status move, but doing it explicitly keeps the board clean immediately.)
+Follow [the shared split finalization steps](../refiner/splitting.md#finalize-the-split-as-one-operation). Create and link self-contained children in Inbox, inspect the complete family, then submit one reviewed `split-finalize` request. That operation activates and orders children, transfers declared prerequisites and closes the parent in Done in one transaction. Use the returned revisions and retain the exact request identity for an uncertain retry. Do not perform those workflow writes separately or close a parent merely because some children exist. An actual approval rejection still requires its protected operator authorization.
 
 **Each child must be self-contained.** Write each child's body as if the parent never existed — full scope, full AC, links to upstream design docs (the project's roadmap doc, ADRs in `docs/knowledge/decisions/` once they exist, etc.). Do NOT reference parent spec sections by name; the parent spec is throwaway context once the split happens. Each child gets its own architect run that designs from the body alone.
 
-The only tie to the parent is `Split from #N` attribution at the bottom of the body and the GitHub sub-issue link. Nothing else flows from parent to child.
+Retain `Split from #N`, the native sub-issue link and the original feature-root marker. The finalizer inherits priority, security/platform labels and existing blockers; each child still owns its complete acceptance body.
 
-Order matters when children depend on each other (e.g. child B wires consumers introduced in child A). The dispatcher's WIP=1 model serializes them naturally — child B's architect runs after child A is in Done, so it reads the actual code child A produced rather than a paragraph in a parent spec.
+Order alone does not serialize concurrent workers. Declare actual child prerequisites in `dependsOn`; the finalizer records native blockers so a consumer starts after its required child lands.
 
 The new issues will get picked up by your column on subsequent dispatch cycles. Don't try to refine multiple at once in a single run.
 

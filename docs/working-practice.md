@@ -89,6 +89,8 @@ Check the current branch before publishing. Codex uses these commands instead of
 | `board-add ISSUE` | Add the issue to Pyrycode Desktop board 7. |
 | `board-status ISSUE STATUS` | Set its board status by exact name, such as `Backlog` or `In Development`. |
 | `board-after ISSUE AFTER_ISSUE` | Place it after another Pyrycode Desktop issue on board 7. Use `top` instead of a number for first position. |
+| `split-inspect PARENT` | Read the complete split family and authoritative revision template through the managed bridge. |
+| `split-finalize PARENT JSON_FILE` | Atomically activate/order children, transfer declared prerequisites and close the replaced parent. Retain the exact JSON identity for retries. |
 | `relations ISSUE` | Read parents, children and dependencies. Each list reports whether more than 100 exist; a truncated list is not complete. |
 | `add-child PARENT CHILD` | Attach a child to its parent. |
 | `remove-child PARENT CHILD` | Remove that parent-child link. |
@@ -99,7 +101,7 @@ Labels are added and removed with `/Users/juhanailmoniemi/.codex/bin/pyrycode-de
 
 Pass titles and statuses as one quoted argument. Body files take absolute paths inside a unique subfolder per task of `/Users/juhanailmoniemi/.codex/publish/pyrycode-desktop/`. Put only intended GitHub content there. Symbolic links, hard links and parent-directory traversal are rejected. The helpers fix the repository, require numeric issue numbers, take no extra flags, URLs, remote or branch names or arbitrary queries, and resolve project field and item ids themselves. Add an issue to the board before setting its status or position.
 
-This approval covers sending ticket implementation, tests and workflow text to `github.com/pyrycode/pyrycode-desktop`. The helpers do not merge PRs, force-push, delete branches, close issues or alter repository settings; those keep their existing approval policy. Permission does not change role ownership: the dispatcher still applies completion labels, and a builder returns its structured refinement outcome rather than routing the ticket itself.
+This approval covers sending ticket implementation, tests and workflow text to `github.com/pyrycode/pyrycode-desktop`. Ordinary helper actions do not merge PRs, force-push, delete branches, close issues or alter repository settings; those operations keep their existing approval policy. The scoped `split-finalize` operation closes only its verified replacement parent through the admitted planning run. It preserves normal approval checks and never clears a recorded rejection. Permission does not change role ownership: the dispatcher still applies completion labels, and a builder returns its structured refinement outcome rather than routing the ticket itself.
 
 ## Denied and rejected actions
 
