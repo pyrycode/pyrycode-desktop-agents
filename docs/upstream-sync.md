@@ -92,3 +92,22 @@ are normalised after environment loading, including existing active gate lists.
 Deploy the shared Desktop unit-selection validator before this consumer. Update
 the consumer revision without changing machine capacity, owners, saved runners,
 stops or drains. A running worker keeps its loaded source until safe replacement.
+
+## Atomic ordinary split finalization, 2026-10-19
+
+Deploy the shared claim authority before the consumer pin. Install its updated
+`codex-helpers` on each worker host/container before admitting the new refiner
+instructions. Ordinary splits now use `split-inspect` and `split-finalize` through
+the managed bridge. Children remain in Inbox until one transaction activates
+them, transfers required dependencies and closes their replaced parent. A saved
+receipt recovers a lost reply without repeating changes. Interrupted creators
+cannot release linked children or advance an unfinished parent to implementation.
+Existing approval rejections, owners, stops, drains and runtime evidence remain
+protected. Existing partial historical splits require ordinary operator review;
+this deployment does not infer permission to clear their holds.
+
+The companion runtime is agent-dispatcher PR #318, with installer validation
+follow-up #319 and explicit bridge refusals in #320. The helper body is identical across both revisions. Trusted
+provisioning retains the documented compatibility home; unrelated build-host
+board-watch rules are not treated as pipeline runner approval policies. The
+configured-policy regression still refuses a missing helper grant.
