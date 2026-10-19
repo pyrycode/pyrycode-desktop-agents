@@ -105,3 +105,9 @@ cannot release linked children or advance an unfinished parent to implementation
 Existing approval rejections, owners, stops, drains and runtime evidence remain
 protected. Existing partial historical splits require ordinary operator review;
 this deployment does not infer permission to clear their holds.
+
+The companion runtime is agent-dispatcher PR #318, with installer validation
+follow-up #319. The helper body is identical across both revisions. Trusted
+provisioning retains the documented compatibility home; unrelated build-host
+board-watch rules are not treated as pipeline runner approval policies. The
+configured-policy regression still refuses a missing helper grant.
