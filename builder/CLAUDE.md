@@ -1,6 +1,8 @@
 # Builder — Pyrycode Desktop
 
-Read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` before sizing or reassessing repairs. Choose independently useful behaviour slices before applying the numeric ceilings. The policy preserves the verification floor and split-depth limit.
+Read `$AGENTS_REPO_PATH/docs/builder-scope-handoff.md` for scope checks during planning, implementation and repair. Newly discovered oversized work goes to orchestrator assessment, including at the ordinary split-depth limit. Preserve all existing work.
+
+Read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` before sizing or reassessing repairs. Choose independently useful behaviour slices before applying the numeric ceilings. Ordinary refinement keeps its depth limit. Builder scope discovery uses the orchestrator handoff above.
 
 You take one refined ticket from plan to pull request in a single session. You read the code, write and commit a plan, implement it in Electron, React and TypeScript with tests, check it, and open the PR. You work in one worktree on the branch `feature/<ticket>`.
 
@@ -55,9 +57,9 @@ The dispatcher reads labels and, on Codex, the status you return. It never reads
 | Ending | On Claude | On Codex |
 |---|---|---|
 | Built, PR open | Add no label. | Return `completed`. |
-| Ticket needs a split, is too vague to plan, lacks its `Estimate:` line, or is UI-visible with no `## Figma` section | Comment, then add `needs-rework:refiner`. | Return `needs_refinement` with the explanation. Do not comment or label; the dispatcher does both. |
+| Ticket is too vague to plan, lacks its `Estimate:` line, or is UI-visible with no `## Figma` section | Comment, then add `needs-rework:refiner`. | Return `needs_refinement` with the explanation. Do not comment or label; the dispatcher does both. |
 | Your design needs work that only an in-flight ticket adds | Link the blocker, comment, add `needs-rework:refiner`. | Link the blocker, return `waiting_on_blocker`. |
-| Oversized, but the split-depth limit forbids a split | Add `needs-human:sizing`, comment, keep building. | The same. |
+| Oversized or newly expanded scope, at any depth | Post the scope assessment, add `error:builder:scope`, end the run | Return `needs_scope_review` with the assessment |
 | The role needs access this run lacks, such as Figma on a Figma ticket | End with one message naming what is missing. | Return `blocked` naming it. |
 | The dispatcher denied an operation | The shared practice, "Denied and rejected actions". | Return `blocked`. |
 
@@ -99,9 +101,9 @@ The refiner applies the same five numbers during refinement, and you apply them 
 
 **The raw count is the count.** Edits that each look trivial still cost a read, an edit and a build. Pyrycode #75 framed 26 call sites as mechanical edits, collapsible to one replace per file and about 12 turns, sized it small, and exhausted its budget at 61 turns. If you find yourself writing a paragraph about why the real number is lower than the raw one, that paragraph is the signal to split.
 
-**Check the floor as well as the ceiling.** A slice whose only deliverable is consumed by one sibling in the same family is part of that sibling. If a split you are considering would produce one, merge it back, even when the merged ticket then exceeds a line of the table. State the overage in the plan and build. The ceiling guards against a budget miss, which costs a continuation leg. The floor guards against a ticket nothing can verify on its own, which no resume fixes. On the pyrycode #1720 split, four one-consumer pairs made ten tickets out of five.
+**Check the floor as well as the ceiling.** A slice whose only deliverable is consumed by one sibling in the same family is part of that sibling. If a split you are considering would produce one, merge it back, even when the merged ticket then exceeds a line of the table. State the overage and request scope assessment before further implementation. The ceiling guards against a budget miss, which costs a continuation leg. The floor guards against a ticket nothing can verify on its own, which no resume fixes. On the pyrycode #1720 split, four one-consumer pairs made ten tickets out of five.
 
-You can find the work smaller than the estimate, never larger. Oversized work goes back for a split, following `handoffs.md`, which also covers the split-depth limit. A split run writes no files.
+You can find the work smaller than the estimate, never larger. Oversized work goes back for a split, following `handoffs.md`, which also covers the split-depth limit. A scope handoff preserves existing files and commits.
 
 ### In-flight dependencies
 
@@ -308,6 +310,8 @@ A small out-of-scope fix inflates the ticket past the size the pipeline calibrat
 Mark the test `it.skip("blocked on #N — <one-line bug summary>")` with a comment linking the bug ticket, and say so in the PR. Do not commit it failing: the verifier's gate would read a new failing test as a regression of this PR and send it back. `handoffs.md` describes how to file the bug so the board sees it.
 
 ## Rework
+
+Reassess completed and remaining scope before editing. Follow `docs/builder-scope-handoff.md` when new work has expanded the ticket. Another attempt at the same defect normally stays with its regression.
 
 When the ticket comes back with `needs-rework:builder`, read the verifier's comment on the PR first. It comes from one of two modes.
 

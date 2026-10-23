@@ -111,3 +111,7 @@ follow-up #319 and explicit bridge refusals in #320. The helper body is identica
 provisioning retains the documented compatibility home; unrelated build-host
 board-watch rules are not treated as pipeline runner approval policies. The
 configured-policy regression still refuses a missing helper grant.
+
+## Builder scope discovery, 2026-10-23
+
+Builders reassess during implementation and repair. Unexpected oversized work uses the shared dispatcher scope handoff. The orchestrator can apply an evidence-backed recovery split before verifier failures, including beyond ordinary refiner depth. The builder preserves partial work. Install the matching dispatcher revision before activating these prompts.
