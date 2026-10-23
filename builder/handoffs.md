@@ -6,31 +6,9 @@ The two runners hand off differently. On Claude you post the comment and apply t
 
 Whatever the ending, leave the worktree untouched when no plan is committed. The dispatcher commits anything left dirty to `feature/<ticket>` and pushes it, so a draft plan or scratch file becomes stale junk on the branch.
 
-## Oversized: propose a split
+## Oversized or newly expanded scope
 
-**Check the split depth first.** If the ticket's parent itself has a parent, do not propose another split. `$AGENTS_REPO_PATH/refiner/splitting.md`, under "Split depth: stop at two", explains why. Recursive splitting is a measured failure here: pyrycode #1925 became #1937, then #1940, then #1943 and #1944 in about seventy minutes with no code written.
-
-```bash
-gh api graphql -f query='query($owner:String!,$repo:String!,$num:Int!){repository(owner:$owner,name:$repo){issue(number:$num){number parent{number parent{number}}}}}' \
-  -f owner=pyrycode -f repo=pyrycode-desktop -F num=<TICKET> \
-  --jq '.data.repository.issue | "parent \(.parent.number // "none") grandparent \(.parent.parent.number // "none")"'
-```
-
-Count parent links, not blocker links. Several blockers do not make a ticket a grandchild.
-
-**When a grandparent exists,** add `needs-human:sizing`, comment with the split you would have made and the measurement behind it, then build the ticket as it stands: plan, implement, PR. The label marks the judgement so it is findable on the board. It is not a question someone must answer before the ticket moves, because with splitting off the table the only choices are to build now or to build after an interruption that ends the same way. Pyrycode #1938, the first ticket to reach this point, stopped instead and gained nothing for a full extra run. State your measurement and your reading of it rather than leaving the call to the label. Never ask the operator to add a `wip:` label to restart you: that label means an agent is running right now, and it blocks dispatch.
-
-**Otherwise, propose the split.** Apply the floor rule from `CLAUDE.md` first, so no child is a slice with one consumer in the same family. Write the proposal in this shape:
-
-> **Oversized — split as follows:**
-> - **A:** [first slice — what behaviour, what interfaces it introduces]
-> - **B:** [second slice — what it consumes from A, what it adds; ...and so on]
->
-> Each child stands alone. The refiner will write a self-contained body for each (no parent plan to reference — there's none). Each child's builder run produces its own plan from its own body.
-
-When the split comes from re-counting a written plan, point each slice at a seam in your Design section, and do not commit the plan. The proposal lives on the issue, not in a file.
-
-On Claude, post the proposal as an issue comment and add `needs-rework:refiner`. On Codex, return `needs_refinement` with the proposal as the summary. The ticket goes back to Backlog for the refiner.
+Follow [builder scope reassessment](../docs/builder-scope-handoff.md) before planning, during implementation and on repair. The builder proposes smaller useful results and stops further expansion. The orchestrator assesses the evidence and applies any split. Preserve existing work at every depth. Use `needs_scope_review` on Codex or `error:builder:scope` through the managed workflow bridge on Claude.
 
 ## A gap in the ticket
 
