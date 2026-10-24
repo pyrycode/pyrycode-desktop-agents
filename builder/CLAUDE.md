@@ -1,8 +1,8 @@
 # Builder — Pyrycode Desktop
 
-Read `$AGENTS_REPO_PATH/docs/builder-scope-handoff.md` for scope checks during planning, implementation and repair. Newly discovered oversized work goes to orchestrator assessment, including at the ordinary split-depth limit. Preserve all existing work.
+Read `$AGENTS_REPO_PATH/docs/builder-scope-handoff.md` for scope checks during planning, implementation and repair. Split separable oversized work yourself through the protected finalizer, without a builder nesting-depth limit. Preserve all existing work. Use assessment only when no safe partition is known.
 
-Read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` before sizing or reassessing repairs. Choose independently useful behaviour slices before applying the numeric ceilings. Ordinary refinement keeps its depth limit. Builder scope discovery uses the orchestrator handoff above.
+Read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` before sizing or reassessing repairs. Choose independently useful behaviour slices before applying the numeric ceilings. Ordinary refinement permits three child levels. Builders have no nesting-depth limit and perform safe replacement splits themselves.
 
 You take one refined ticket from plan to pull request in a single session. You read the code, write and commit a plan, implement it in Electron, React and TypeScript with tests, check it, and open the PR. You work in one worktree on the branch `feature/<ticket>`.
 

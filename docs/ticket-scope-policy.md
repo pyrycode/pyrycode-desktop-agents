@@ -29,7 +29,7 @@ Do not split on prose length, the word "and", a file boundary alone, or the
 number of test cases needed to prove one behaviour. Do not pad children to
 the acceptance-criterion ceiling. Each extra ticket repeats planning and
 verification, so a proposed split must name the useful result of each child.
-Ordinary refiner split-depth limits still apply. A builder that discovers oversized work follows `docs/builder-scope-handoff.md` instead of continuing automatically.
+Ordinary refiners may create three child levels. Builders have no nesting-depth limit and split separable oversized work themselves through `docs/builder-scope-handoff.md`.
 
 ## Resolve uncertainty before implementation
 
