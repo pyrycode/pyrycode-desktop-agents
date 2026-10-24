@@ -1,29 +1,25 @@
-# Builder scope reassessment
+# Builder scope and replacement splits
 
-Check scope before planning, before committing the plan, whenever implementation reveals substantial additional work, and at the start of every repair. Compare completed plus remaining production work, tests, shared helpers and migrations against the admitted estimate and the role's boundaries. Do not wait for the budget to run out or for two failed reviews.
+Check scope before planning, during implementation and at the start of each repair. When the work contains separable useful results, split the ticket yourself through the managed workflow bridge. Builders have no nesting-depth limit. The three-child-level limit applies only to ordinary refiners.
 
-New independently useful behaviours or a materially larger migration require reassessment. A further attempt to fix the same defect normally stays in the ticket. Preserve the defect's regression. File count alone, a long description, a small estimate correction or a failing test alone does not justify splitting.
+A long description, a file count or another attempt at the same defect is not enough reason to split. Keep a bug with its regression. Each child needs an independently useful result, full assigned requirements, meaningful checks, security and acceptance requirements, and explicit dependencies. Preserve the original feature root through every split. Do not repeatedly reproduce the same unchanged scope in new tickets.
 
-## Stop expansion and preserve work
+## Preserve the work
 
-Stop adding scope. Keep existing commits, partial files, branches, pull requests, plans and failed evidence. Never reset, discard or delete work to make a handoff look like a fresh planning run. Do not mark unfinished work complete. Do not create or close split children from the builder run.
+Keep existing commits, partial files, branches, pull requests, plans and failed evidence. Record their exact references in the children, including which completed work to reuse and what remains. Never reset, discard, delete or overwrite work to make a split look new. Do not mark unfinished implementation complete. Keep one-use helpers with their consumers.
 
-Write a self-contained assessment with:
+## Perform the split
 
-- The original estimate and the new estimate, separating completed and remaining work.
-- The inspected source revision and concrete newly discovered consumers or behaviours.
-- Existing branch, commit, pull request, local worktree and test-evidence references.
-- Proposed parts with an independently useful result, meaningful checks and dependency order for each.
-- Where each original requirement and unresolved review finding would go. Preserve security review, required live acceptance and documentation.
+1. Create self-contained children through the managed GitHub bridge. Keep them in Inbox until finalization. Link every child to this ticket. Assign every original requirement and unresolved finding to a named child. Retain the original feature-root and policy markers.
+2. Use the installed pipeline helper's `split-inspect PARENT` operation. It returns current revisions, the complete child inventory and every existing dependent. The equivalent managed bridge request is GET `/repos/OWNER/REPO/issues/PARENT/split`.
+3. Save the returned template outside the worktree in the approved publishing directory. Add a unique `commandId` and a short `summary`. Order children by their actual dependencies. Fill each child's `dependsOn` with earlier child numbers. For each existing dependent, fill `children` with the child numbers that now own its prerequisite. Preserve all existing blockers. Shared-file overlap alone is coordination, not a causal prerequisite.
+4. Use `split-finalize PARENT ABSOLUTE_JSON_FILE`. The equivalent managed request is POST to the same endpoint with that JSON file. One transaction validates ownership, stage, current revisions, complete inventories, holds and active work. It activates the children in Backlog, transfers prerequisites and closes the replaced parent. Reuse the exact request after an uncertain reply. After a changed scope or workflow refusal, inspect and reconcile instead of inventing another split identity.
+5. After confirmed finalization, stop this run. Codex returns `completed` with the replacement children and retained-work references. Claude ends with the same summary. This completes the split, not the implementation. The dispatcher reads the authority's receipt for this exact run and retains the parent worktree without auto-commit, push, implementation completion labels or normal verification of the replaced parent. Children continue through ordinary refinement, building, independent review and required checks.
 
-For a broad migration, check whether existing consumers can adopt the supported contract in passing groups before the final enforcement change. Do not split a bug from its regression or create unused helpers just to reduce a line count. If no safe split is known, explain why and request assessment rather than inventing one or expanding automatically.
+Children remain held if this run stops before finalization. Do not release them by closing the parent separately or setting completion labels. Preserve the unfinished split for recovery.
 
-## Request orchestrator assessment
+## When no safe split is known
 
-On Codex, return `needs_scope_review` with that assessment in the summary. Do not post the routing comment or label yourself. On Claude, post the assessment, add `error:builder:scope` through the managed workflow bridge, and end the run. This is a scope request, not a claim that product code failed. The dispatcher retains the worktree without auto-committing, pushing or declaring completion. A comment without the outcome or label does not request assessment.
+Stop expansion and retain the evidence. Codex returns `needs_scope_review` with the original and revised estimates, source revision, completed and remaining work, proposed useful results and all reuse references. Claude posts that assessment through the managed bridge, adds `error:builder:scope` and ends the run. This fallback requests recovery assessment. It is not the normal path when a safe partition is already known.
 
-The orchestrator assesses after the builder ends. It verifies retained builder evidence and performs any justified split with the existing protected recovery transaction. A discovered-scope split does not need prior verifier failures. A later repair may still use the ordinary repeated-rework route. Both preserve ownership, holds, dependencies, failed evidence and complete child acceptance. Missing evidence remains pending.
-
-An ordinary refiner's split-depth limit does not require a builder to continue oversized work. The rule keeping one-use helpers with their consumer prevents useless children; it does not authorise unlimited growth. Request assessment at any depth. Recovery may exceed the ordinary depth limit when the evidence establishes smaller independently testable results. It must not repeatedly split unchanged scope. If the evidence instead supports one bounded repair, recovery returns that concrete plan to the builder.
-
-A permission rejection, missing access, infrastructure failure or flaky check keeps its existing route. A scope request cannot override an operator hold or approval decision.
+Permission rejections, missing access, infrastructure failures and flaky tests keep their existing routes. A split cannot bypass ownership, an operator hold, an approval rejection or acceptance requirements. The builder's lack of a depth limit does not grant authority over unrelated tickets.

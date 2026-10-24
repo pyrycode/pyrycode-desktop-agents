@@ -8,7 +8,7 @@ Whatever the ending, leave the worktree untouched when no plan is committed. The
 
 ## Oversized or newly expanded scope
 
-Follow [builder scope reassessment](../docs/builder-scope-handoff.md) before planning, during implementation and on repair. The builder proposes smaller useful results and stops further expansion. The orchestrator assesses the evidence and applies any split. Preserve existing work at every depth. Use `needs_scope_review` on Codex or `error:builder:scope` through the managed workflow bridge on Claude.
+Follow [builder scope reassessment](../docs/builder-scope-handoff.md) before planning, during implementation and on repair. The builder creates and finalizes a safe partition itself, without a nesting-depth cap. Preserve all existing work and assign each original requirement and finding to a useful child. Use `needs_scope_review` on Codex or `error:builder:scope` on Claude only when no safe partition is known.
 
 ## A gap in the ticket
 

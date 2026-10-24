@@ -4,16 +4,16 @@ Read this once you have decided a ticket must split. The decision itself is in t
 
 The commands named below are the Desktop pipeline helper's actions, described in the shared practice. Without the helper, the same effects come from `gh` and the GraphQL mutations `addSubIssue`, `addBlockedBy` and `updateProjectV2ItemPosition`. Resolve project, field, option and item ids at runtime and never hardcode them. `gh issue view --json projectItems` does not return the project item id that position and status changes need; the GraphQL `projectItems` query does.
 
-## Split depth: stop at two
+## Split depth: stop at three
 
 Before creating children, read `$AGENTS_REPO_PATH/docs/ticket-scope-policy.md` for the feature-root and policy markers. Preserve the original feature root on the parent and every child. Closing this parent replaces it with children; it does not complete the feature.
 
 Check the ticket's parentage first, with `relations <ticket>`, which returns its parent and grandparent. Without the helper, this query does the same:
 
 ```bash
-gh api graphql -f query='query($owner:String!,$repo:String!,$num:Int!){repository(owner:$owner,name:$repo){issue(number:$num){number parent{number parent{number}}}}}' \
+gh api graphql -f query='query($owner:String!,$repo:String!,$num:Int!){repository(owner:$owner,name:$repo){issue(number:$num){number parent{number parent{number parent{number}}}}}}' \
   -f owner=pyrycode -f repo=pyrycode-desktop -F num=<TICKET> \
-  --jq '.data.repository.issue | "parent \(.parent.number // "none") grandparent \(.parent.parent.number // "none")"'
+  --jq '.data.repository.issue | "parent \(.parent.number // "none") grandparent \(.parent.parent.number // "none") great-grandparent \(.parent.parent.parent.number // "none")"'
 ```
 
 If the ticket has a grandparent, do not split it. Add `needs-human:sizing`, comment with the split you would have made and why, then refine it in place as one ticket. Do not stop and wait for a person. Once splitting is off the table, the only outcomes are refining it now or refining it after an interruption, so the label marks the call for later review rather than asking a question.
