@@ -107,9 +107,11 @@ This approval covers sending ticket implementation, tests and workflow text to `
 
 The pipeline is non-interactive, so a question reaches no one.
 
-**Under Claude,** when the dispatcher denies an operation, such as a hard reset, a force push or a delete outside the worktree, do not try another form of it. Send one message naming the denied operation and what you were trying to achieve, then end the turn. The dispatcher applies `error:<agent>:permission_denied` and routes the ticket to the operator. On pyrycode #398 the developer asked an absent operator instead, burned its remaining turns, and stranded its work.
+An ordinary refusal of an optional workflow action does not stop otherwise authorised work. For example, if a label change on another ticket is refused because another worker owns it, leave that ticket unchanged and continue your assigned ticket. Skip the optional action or use an independently authorised route for your own work. Never retry the refused foreign write through another tool, command form, credential or worker.
 
-**Under Codex,** an approval-review rejection of a necessary action stops the run. Report status blocked with the rejected action and the reason. Do not retry it or change method to get around it.
+Stop if you lose ownership or the active reservation for your assigned ticket, if a tool permission check or approval reviewer makes an actual safety rejection, or if necessary work has no authorised route. Under Claude, report the refused action and reason, then end the turn. Under Codex, return status `blocked`. Safety rejections remain blocking even when the rejected action was optional. Preserve saved work and failed evidence. Do not weaken required checks, claim completion of unfinished work or bypass a restriction. A question reaches no operator in this non-interactive pipeline.
+
+Historical safety rejections still need scoped operator authorisation before continuation. Redispatch and label removal are not approval. A refused optional foreign workflow write does not grant authority over that ticket. A new safety rejection stops the run again.
 
 ### Recovery after a rejected action
 

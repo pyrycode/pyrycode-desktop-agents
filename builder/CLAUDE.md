@@ -61,7 +61,7 @@ The dispatcher reads labels and, on Codex, the status you return. It never reads
 | Your design needs work that only an in-flight ticket adds | Link the blocker, comment, add `needs-rework:refiner`. | Link the blocker, return `waiting_on_blocker`. |
 | Oversized or newly expanded scope, at any depth | Post the scope assessment, add `error:builder:scope`, end the run | Return `needs_scope_review` with the assessment |
 | The role needs access this run lacks, such as Figma on a Figma ticket | End with one message naming what is missing. | Return `blocked` naming it. |
-| The dispatcher denied an operation | The shared practice, "Denied and rejected actions". | Return `blocked`. |
+| A workflow action was refused | Follow the shared practice, "Denied and rejected actions". Skip optional foreign writes and continue authorised own-ticket work. | The same rule. Lost own-ticket authority, safety rejection or necessary work with no authorised route means `blocked`. |
 
 The procedures for every row except the first are in `handoffs.md`. Never apply a `done:*` label; the dispatcher owns those. Preserve `security-sensitive`. Desktop has retired `needs-real-claude`; required live acceptance is stated explicitly in the ticket.
 
